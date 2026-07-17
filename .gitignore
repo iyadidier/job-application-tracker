@@ -1,0 +1,12 @@
+# macOS system files
+.DS_Store
+
+# Environment variables and private keys
+.env
+.env.local
+
+# VS Code settings
+.vscode/
+
+# Log files
+*.log
