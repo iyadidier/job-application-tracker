@@ -24,8 +24,13 @@
             <h1>JobTrack</h1>
 
             <div>
-                <button type="button">Sign In</button>
-                <button type="button">Create Account</button>
+                <button type="button">
+                    Sign In
+                </button>
+
+                <button type="button">
+                    Create Account
+                </button>
             </div>
         </nav>
     </header>
@@ -34,14 +39,18 @@
         <section>
             <p>Organize your job search</p>
 
-            <h2>Track every job application in one place.</h2>
+            <h2>
+                Track every job application in one place.
+            </h2>
 
             <p>
                 Manage applications, interviews, follow-ups, offers,
                 and important job-search information.
             </p>
 
-            <button type="button">Get Started</button>
+            <button type="button">
+                Get Started
+            </button>
         </section>
 
         <section>
@@ -73,13 +82,223 @@
         <section>
             <div>
                 <h2>Your Applications</h2>
-                <button type="button">Add Application</button>
+
+                <button
+                    id="open-application-form"
+                    type="button"
+                >
+                    Add Application
+                </button>
             </div>
 
             <p>
                 No applications have been added yet.
             </p>
         </section>
+
+        <div
+            id="application-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="application-form-title"
+            hidden
+        >
+            <div>
+                <div>
+                    <div>
+                        <p>Job application</p>
+
+                        <h2 id="application-form-title">
+                            Add a New Application
+                        </h2>
+                    </div>
+
+                    <button
+                        id="close-application-form"
+                        type="button"
+                        aria-label="Close application form"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <form id="application-form">
+                    <div>
+                        <label for="company-name">
+                            Company Name
+                        </label>
+
+                        <input
+                            id="company-name"
+                            name="companyName"
+                            type="text"
+                            placeholder="Example: Manulife Bank"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label for="position-title">
+                            Position Title
+                        </label>
+
+                        <input
+                            id="position-title"
+                            name="positionTitle"
+                            type="text"
+                            placeholder="Example: Business Analyst Intern"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label for="job-location">
+                            Job Location
+                        </label>
+
+                        <input
+                            id="job-location"
+                            name="jobLocation"
+                            type="text"
+                            placeholder="Example: Ottawa, Ontario"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="application-status">
+                            Application Status
+                        </label>
+
+                        <select
+                            id="application-status"
+                            name="applicationStatus"
+                            required
+                        >
+                            <option value="">
+                                Select a status
+                            </option>
+
+                            <option value="Interested">
+                                Interested
+                            </option>
+
+                            <option value="Applied">
+                                Applied
+                            </option>
+
+                            <option value="Assessment">
+                                Assessment
+                            </option>
+
+                            <option value="Interview">
+                                Interview
+                            </option>
+
+                            <option value="Offer">
+                                Offer
+                            </option>
+
+                            <option value="Rejected">
+                                Rejected
+                            </option>
+
+                            <option value="Withdrawn">
+                                Withdrawn
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="application-date">
+                            Application Date
+                        </label>
+
+                        <input
+                            id="application-date"
+                            name="applicationDate"
+                            type="date"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label for="salary-information">
+                            Salary Information
+                        </label>
+
+                        <input
+                            id="salary-information"
+                            name="salaryInformation"
+                            type="text"
+                            placeholder="Example: $50,000–$60,000"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="job-link">
+                            Job Posting Link
+                        </label>
+
+                        <input
+                            id="job-link"
+                            name="jobLink"
+                            type="url"
+                            placeholder="https://example.com/job"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="interview-date">
+                            Interview Date
+                        </label>
+
+                        <input
+                            id="interview-date"
+                            name="interviewDate"
+                            type="date"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="follow-up-date">
+                            Follow-Up Date
+                        </label>
+
+                        <input
+                            id="follow-up-date"
+                            name="followUpDate"
+                            type="date"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="application-notes">
+                            Notes
+                        </label>
+
+                        <textarea
+                            id="application-notes"
+                            name="applicationNotes"
+                            rows="5"
+                            placeholder="Add interview details, recruiter information, or important reminders."
+                        ></textarea>
+                    </div>
+
+                    <div>
+                        <button
+                            id="cancel-application-form"
+                            type="button"
+                        >
+                            Cancel
+                        </button>
+
+                        <button type="submit">
+                            Save Application
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </main>
 
     <footer>
