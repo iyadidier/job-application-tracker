@@ -633,3 +633,45 @@ body.modal-open {
         grid-column: auto;
     }
 }
+/* ------------------------------
+   Applications header buttons
+------------------------------ */
+
+.applications-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#export-applications-button {
+    border: 1px solid var(--primary-color);
+    background-color: transparent;
+    color: var(--primary-color);
+}
+
+#export-applications-button:hover {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+#export-applications-button:disabled {
+    border-color: var(--border-color);
+    background-color: var(--background-color);
+    color: var(--secondary-text);
+    cursor: not-allowed;
+}
+
+/* ------------------------------
+   Header buttons on mobile
+------------------------------ */
+
+@media (max-width: 550px) {
+    .applications-header-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .applications-header-actions button {
+        width: 100%;
+    }
+}

@@ -15,6 +15,10 @@ const openApplicationFormButton = document.getElementById(
     "open-application-form"
 );
 
+const exportApplicationsButton = document.getElementById(
+    "export-applications-button"
+);
+
 const closeApplicationFormButton = document.getElementById(
     "close-application-form"
 );
@@ -363,7 +367,10 @@ function sortApplicationResults(applicationResults) {
     const selectedSort = sortApplicationsInput.value;
     const sortedApplications = [...applicationResults];
 
-    sortedApplications.sort(function (firstApplication, secondApplication) {
+    sortedApplications.sort(function (
+        firstApplication,
+        secondApplication
+    ) {
         if (selectedSort === "oldest") {
             return (
                 firstApplication.applicationDate || ""
@@ -440,6 +447,99 @@ function updateResultsMessage(visibleCount) {
     applicationsResultsMessage.textContent =
         `Showing ${visibleCount} of ${applications.length} applications.`;
 }
+
+/* ---------------------------------
+   CSV export
+--------------------------------- */
+
+/**
+ * Prepare one value for use inside a CSV file.
+ */
+function escapeCsvValue(value) {
+    const textValue = value === null || value === undefined
+        ? ""
+        : String(value);
+
+    const escapedValue = textValue.replace(/"/g, '""');
+
+    return `"${escapedValue}"`;
+}
+
+/**
+ * Export all saved applications to a CSV file.
+ */
+function exportApplicationsToCsv() {
+    if (applications.length === 0) {
+        window.alert(
+            "Add at least one job application before exporting."
+        );
+
+        return;
+    }
+
+    const headers = [
+        "Company Name",
+        "Position Title",
+        "Location",
+        "Status",
+        "Application Date",
+        "Salary Information",
+        "Job Posting Link",
+        "Interview Date",
+        "Follow-Up Date",
+        "Notes",
+        "Created At",
+        "Updated At"
+    ];
+
+    const rows = applications.map(function (application) {
+        return [
+            application.companyName,
+            application.positionTitle,
+            application.location,
+            application.status,
+            application.applicationDate,
+            application.salary,
+            application.jobLink,
+            application.interviewDate,
+            application.followUpDate,
+            application.notes,
+            application.createdAt,
+            application.updatedAt
+        ];
+    });
+
+    const csvRows = [headers, ...rows].map(function (row) {
+        return row.map(escapeCsvValue).join(",");
+    });
+
+    const csvContent = csvRows.join("\r\n");
+
+    const csvFile = new Blob(
+        ["\uFEFF", csvContent],
+        {
+            type: "text/csv;charset=utf-8;"
+        }
+    );
+
+    const downloadUrl = URL.createObjectURL(csvFile);
+    const downloadLink = document.createElement("a");
+
+    downloadLink.href = downloadUrl;
+    downloadLink.download =
+        `job-applications-${getTodayDate()}.csv`;
+
+    document.body.append(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+
+    URL.revokeObjectURL(downloadUrl);
+}
+
+exportApplicationsButton.addEventListener(
+    "click",
+    exportApplicationsToCsv
+);
 
 /* ---------------------------------
    Delete functionality
@@ -595,6 +695,9 @@ function renderApplications() {
     const visibleApplications = getVisibleApplications();
 
     emptyApplicationsMessage.hidden = applications.length !== 0;
+
+    exportApplicationsButton.disabled =
+        applications.length === 0;
 
     visibleApplications.forEach(function (application) {
         const listItem = createApplicationListItem(application);
