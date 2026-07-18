@@ -675,3 +675,229 @@ body.modal-open {
         width: 100%;
     }
 }
+/* ------------------------------
+   Authentication navigation
+------------------------------ */
+
+#guest-navigation,
+#user-navigation {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#user-navigation span {
+    max-width: 240px;
+    color: var(--secondary-text);
+    font-size: 0.9rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#sign-out-button {
+    border: 1px solid var(--border-color);
+    background-color: transparent;
+    color: var(--text-color);
+}
+
+#sign-out-button:hover {
+    background-color: var(--background-color);
+}
+
+/* ------------------------------
+   Authentication modal
+------------------------------ */
+
+#authentication-modal {
+    position: fixed;
+    z-index: 1100;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background-color: rgba(15, 23, 42, 0.65);
+    overflow-y: auto;
+}
+
+#authentication-modal > div {
+    width: min(460px, 100%);
+    padding: 30px;
+    background-color: var(--surface-color);
+    border-radius: 16px;
+    box-shadow: 0 25px 60px rgba(15, 23, 42, 0.25);
+}
+
+.authentication-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 12px;
+}
+
+.authentication-modal-header p {
+    margin-bottom: 4px;
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+#authentication-title {
+    font-size: 1.7rem;
+    line-height: 1.25;
+}
+
+#close-authentication-button {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+#close-authentication-button:hover {
+    background-color: var(--border-color);
+}
+
+#authentication-description {
+    margin-bottom: 24px;
+    color: var(--secondary-text);
+    font-size: 0.95rem;
+}
+
+/* ------------------------------
+   Authentication form
+------------------------------ */
+
+#authentication-form {
+    display: grid;
+    gap: 18px;
+}
+
+#authentication-form > div {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+#authentication-form label {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+#authentication-form input {
+    width: 100%;
+    min-height: 46px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px 14px;
+    background-color: var(--surface-color);
+    color: var(--text-color);
+    font: inherit;
+    outline: none;
+}
+
+#authentication-form input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+#authentication-submit-button {
+    width: 100%;
+    min-height: 46px;
+}
+
+#authentication-submit-button:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* ------------------------------
+   Authentication messages
+------------------------------ */
+
+#authentication-message {
+    min-height: 22px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+#authentication-message.authentication-error {
+    color: #dc2626;
+}
+
+#authentication-message.authentication-success {
+    color: var(--success-color);
+}
+
+/* ------------------------------
+   Authentication mode switch
+------------------------------ */
+
+.authentication-switch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 22px;
+    color: var(--secondary-text);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+#switch-authentication-mode {
+    padding: 4px;
+    background-color: transparent;
+    color: var(--primary-color);
+}
+
+#switch-authentication-mode:hover {
+    background-color: transparent;
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+/* ------------------------------
+   Authentication responsiveness
+------------------------------ */
+
+@media (max-width: 550px) {
+    #guest-navigation,
+    #user-navigation {
+        width: 100%;
+    }
+
+    #guest-navigation button {
+        flex: 1;
+    }
+
+    #user-navigation {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    #user-navigation span {
+        max-width: 100%;
+    }
+
+    #authentication-modal {
+        align-items: flex-start;
+        padding: 14px;
+    }
+
+    #authentication-modal > div {
+        padding: 22px;
+    }
+
+    .authentication-switch {
+        align-items: center;
+        flex-direction: column;
+    }
+}

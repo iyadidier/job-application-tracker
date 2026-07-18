@@ -23,13 +23,33 @@
         <nav>
             <h1>JobTrack</h1>
 
-            <div>
-                <button type="button">
+            <div id="guest-navigation">
+                <button
+                    id="open-sign-in-button"
+                    type="button"
+                >
                     Sign In
                 </button>
 
-                <button type="button">
+                <button
+                    id="open-create-account-button"
+                    type="button"
+                >
                     Create Account
+                </button>
+            </div>
+
+            <div
+                id="user-navigation"
+                hidden
+            >
+                <span id="signed-in-user-email"></span>
+
+                <button
+                    id="sign-out-button"
+                    type="button"
+                >
+                    Sign Out
                 </button>
             </div>
         </nav>
@@ -210,6 +230,7 @@
             ></ul>
         </section>
 
+        <!-- Job application form modal -->
         <div
             id="application-modal"
             role="dialog"
@@ -413,6 +434,116 @@
                 </form>
             </div>
         </div>
+
+        <!-- Authentication modal -->
+        <div
+            id="authentication-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="authentication-title"
+            hidden
+        >
+            <div>
+                <div class="authentication-modal-header">
+                    <div>
+                        <p>JobTrack account</p>
+
+                        <h2 id="authentication-title">
+                            Sign In
+                        </h2>
+                    </div>
+
+                    <button
+                        id="close-authentication-button"
+                        type="button"
+                        aria-label="Close authentication form"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <p id="authentication-description">
+                    Sign in to access your saved job applications.
+                </p>
+
+                <form id="authentication-form">
+                    <div>
+                        <label for="authentication-email">
+                            Email Address
+                        </label>
+
+                        <input
+                            id="authentication-email"
+                            name="email"
+                            type="email"
+                            placeholder="name@example.com"
+                            autocomplete="email"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label for="authentication-password">
+                            Password
+                        </label>
+
+                        <input
+                            id="authentication-password"
+                            name="password"
+                            type="password"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            minlength="6"
+                            required
+                        >
+                    </div>
+
+                    <div
+                        id="confirm-password-field"
+                        hidden
+                    >
+                        <label for="authentication-confirm-password">
+                            Confirm Password
+                        </label>
+
+                        <input
+                            id="authentication-confirm-password"
+                            name="confirmPassword"
+                            type="password"
+                            placeholder="Enter your password again"
+                            autocomplete="new-password"
+                            minlength="6"
+                        >
+                    </div>
+
+                    <p
+                        id="authentication-message"
+                        role="status"
+                        aria-live="polite"
+                    ></p>
+
+                    <button
+                        id="authentication-submit-button"
+                        type="submit"
+                    >
+                        Sign In
+                    </button>
+                </form>
+
+                <div class="authentication-switch">
+                    <span id="authentication-switch-text">
+                        Do not have an account?
+                    </span>
+
+                    <button
+                        id="switch-authentication-mode"
+                        type="button"
+                    >
+                        Create Account
+                    </button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <footer>
@@ -421,8 +552,8 @@
         </p>
     </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase-config.js"></script>
-<script src="js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
