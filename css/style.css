@@ -533,3 +533,22 @@ body.modal-open {
     background-color: #dc2626;
     color: #ffffff;
 }
+/* ------------------------------
+   Edit application button
+------------------------------ */
+
+.application-actions {
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.edit-application-button {
+    border: 1px solid var(--primary-color);
+    background-color: transparent;
+    color: var(--primary-color);
+}
+
+.edit-application-button:hover {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}

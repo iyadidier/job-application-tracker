@@ -6,6 +6,9 @@
 
 const applicationModal = document.getElementById("application-modal");
 const applicationForm = document.getElementById("application-form");
+const applicationFormTitle = document.getElementById(
+    "application-form-title"
+);
 
 const openApplicationFormButton = document.getElementById(
     "open-application-form"
@@ -19,8 +22,28 @@ const cancelApplicationFormButton = document.getElementById(
     "cancel-application-form"
 );
 
+const submitApplicationButton = applicationForm.querySelector(
+    'button[type="submit"]'
+);
+
 const companyNameInput = document.getElementById("company-name");
-const applicationDateInput = document.getElementById("application-date");
+const positionTitleInput = document.getElementById("position-title");
+const jobLocationInput = document.getElementById("job-location");
+const applicationStatusInput = document.getElementById(
+    "application-status"
+);
+const applicationDateInput = document.getElementById(
+    "application-date"
+);
+const salaryInformationInput = document.getElementById(
+    "salary-information"
+);
+const jobLinkInput = document.getElementById("job-link");
+const interviewDateInput = document.getElementById("interview-date");
+const followUpDateInput = document.getElementById("follow-up-date");
+const applicationNotesInput = document.getElementById(
+    "application-notes"
+);
 
 const applicationsList = document.getElementById("applications-list");
 
@@ -34,7 +57,9 @@ const totalApplicationsCount = document.getElementById(
 
 const interviewsCount = document.getElementById("interviews-count");
 const offersCount = document.getElementById("offers-count");
-const responseRateCount = document.getElementById("response-rate-count");
+const responseRateCount = document.getElementById(
+    "response-rate-count"
+);
 
 /* ---------------------------------
    Application storage
@@ -43,6 +68,7 @@ const responseRateCount = document.getElementById("response-rate-count");
 const storageKey = "jobTrackApplications";
 
 let applications = loadApplications();
+let editingApplicationId = null;
 
 /**
  * Load saved applications from browser storage.
@@ -108,21 +134,69 @@ function formatDate(dateValue) {
 }
 
 /* ---------------------------------
-   Modal controls
+   Form and modal controls
 --------------------------------- */
 
 /**
- * Open the application form.
+ * Reset the form to Add Application mode.
  */
-function openApplicationForm() {
+function resetApplicationForm() {
+    applicationForm.reset();
+
+    editingApplicationId = null;
+    applicationFormTitle.textContent = "Add a New Application";
+    submitApplicationButton.textContent = "Save Application";
+    applicationDateInput.value = getTodayDate();
+}
+
+/**
+ * Display the modal.
+ */
+function showApplicationModal() {
     applicationModal.hidden = false;
     document.body.classList.add("modal-open");
+    companyNameInput.focus();
+}
 
-    if (!applicationDateInput.value) {
-        applicationDateInput.value = getTodayDate();
+/**
+ * Open an empty form for a new application.
+ */
+function openNewApplicationForm() {
+    resetApplicationForm();
+    showApplicationModal();
+}
+
+/**
+ * Open the form with an existing application's information.
+ */
+function openEditApplicationForm(applicationId) {
+    const applicationToEdit = applications.find(
+        function (application) {
+            return application.id === applicationId;
+        }
+    );
+
+    if (!applicationToEdit) {
+        return;
     }
 
-    companyNameInput.focus();
+    editingApplicationId = applicationId;
+
+    applicationFormTitle.textContent = "Edit Application";
+    submitApplicationButton.textContent = "Update Application";
+
+    companyNameInput.value = applicationToEdit.companyName;
+    positionTitleInput.value = applicationToEdit.positionTitle;
+    jobLocationInput.value = applicationToEdit.location;
+    applicationStatusInput.value = applicationToEdit.status;
+    applicationDateInput.value = applicationToEdit.applicationDate;
+    salaryInformationInput.value = applicationToEdit.salary;
+    jobLinkInput.value = applicationToEdit.jobLink;
+    interviewDateInput.value = applicationToEdit.interviewDate;
+    followUpDateInput.value = applicationToEdit.followUpDate;
+    applicationNotesInput.value = applicationToEdit.notes;
+
+    showApplicationModal();
 }
 
 /**
@@ -131,12 +205,14 @@ function openApplicationForm() {
 function closeApplicationForm() {
     applicationModal.hidden = true;
     document.body.classList.remove("modal-open");
+
+    resetApplicationForm();
     openApplicationFormButton.focus();
 }
 
 openApplicationFormButton.addEventListener(
     "click",
-    openApplicationForm
+    openNewApplicationForm
 );
 
 closeApplicationFormButton.addEventListener(
@@ -213,7 +289,7 @@ function updateDashboard() {
 --------------------------------- */
 
 /**
- * Delete an application after the user confirms.
+ * Delete an application after confirmation.
  */
 function deleteApplication(applicationId) {
     const applicationToDelete = applications.find(
@@ -319,6 +395,15 @@ function createApplicationListItem(application) {
     const actions = document.createElement("div");
     actions.classList.add("application-actions");
 
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.classList.add("edit-application-button");
+    editButton.textContent = "Edit";
+
+    editButton.addEventListener("click", function () {
+        openEditApplicationForm(application.id);
+    });
+
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.classList.add("delete-application-button");
@@ -328,8 +413,7 @@ function createApplicationListItem(application) {
         deleteApplication(application.id);
     });
 
-    actions.append(deleteButton);
-
+    actions.append(editButton, deleteButton);
     listItem.append(heading, details, actions);
 
     return listItem;
@@ -341,11 +425,7 @@ function createApplicationListItem(application) {
 function renderApplications() {
     applicationsList.innerHTML = "";
 
-    if (applications.length === 0) {
-        emptyApplicationsMessage.hidden = false;
-    } else {
-        emptyApplicationsMessage.hidden = true;
-    }
+    emptyApplicationsMessage.hidden = applications.length !== 0;
 
     applications.forEach(function (application) {
         const listItem = createApplicationListItem(application);
@@ -364,8 +444,7 @@ applicationForm.addEventListener("submit", function (event) {
 
     const formData = new FormData(applicationForm);
 
-    const newApplication = {
-        id: crypto.randomUUID(),
+    const applicationInformation = {
         companyName: formData.get("companyName").trim(),
         positionTitle: formData.get("positionTitle").trim(),
         location: formData.get("jobLocation").trim(),
@@ -375,18 +454,34 @@ applicationForm.addEventListener("submit", function (event) {
         jobLink: formData.get("jobLink").trim(),
         interviewDate: formData.get("interviewDate"),
         followUpDate: formData.get("followUpDate"),
-        notes: formData.get("applicationNotes").trim(),
-        createdAt: new Date().toISOString()
+        notes: formData.get("applicationNotes").trim()
     };
 
-    applications.unshift(newApplication);
+    if (editingApplicationId) {
+        applications = applications.map(function (application) {
+            if (application.id !== editingApplicationId) {
+                return application;
+            }
+
+            return {
+                ...application,
+                ...applicationInformation,
+                updatedAt: new Date().toISOString()
+            };
+        });
+    } else {
+        const newApplication = {
+            id: crypto.randomUUID(),
+            ...applicationInformation,
+            createdAt: new Date().toISOString(),
+            updatedAt: null
+        };
+
+        applications.unshift(newApplication);
+    }
 
     saveApplications();
     renderApplications();
-
-    applicationForm.reset();
-    applicationDateInput.value = getTodayDate();
-
     closeApplicationForm();
 });
 
@@ -394,4 +489,5 @@ applicationForm.addEventListener("submit", function (event) {
    Initial page display
 --------------------------------- */
 
+resetApplicationForm();
 renderApplications();
