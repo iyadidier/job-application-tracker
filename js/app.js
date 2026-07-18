@@ -1,25 +1,85 @@
 "use strict";
 
-// Get the form modal and its buttons from the HTML.
+/* ---------------------------------
+   Page elements
+--------------------------------- */
+
 const applicationModal = document.getElementById("application-modal");
+const applicationForm = document.getElementById("application-form");
+
 const openApplicationFormButton = document.getElementById(
     "open-application-form"
 );
+
 const closeApplicationFormButton = document.getElementById(
     "close-application-form"
 );
+
 const cancelApplicationFormButton = document.getElementById(
     "cancel-application-form"
 );
 
-// Get the form and important form fields.
-const applicationForm = document.getElementById("application-form");
 const companyNameInput = document.getElementById("company-name");
 const applicationDateInput = document.getElementById("application-date");
 
+const applicationsList = document.getElementById("applications-list");
+
+const emptyApplicationsMessage = document.getElementById(
+    "empty-applications-message"
+);
+
+const totalApplicationsCount = document.getElementById(
+    "total-applications-count"
+);
+
+const interviewsCount = document.getElementById("interviews-count");
+const offersCount = document.getElementById("offers-count");
+const responseRateCount = document.getElementById("response-rate-count");
+
+/* ---------------------------------
+   Application storage
+--------------------------------- */
+
+const storageKey = "jobTrackApplications";
+
+let applications = loadApplications();
+
 /**
- * Return today's date in the YYYY-MM-DD format
- * required by an HTML date input.
+ * Load saved applications from browser storage.
+ */
+function loadApplications() {
+    const savedApplications = localStorage.getItem(storageKey);
+
+    if (!savedApplications) {
+        return [];
+    }
+
+    try {
+        const parsedApplications = JSON.parse(savedApplications);
+
+        return Array.isArray(parsedApplications)
+            ? parsedApplications
+            : [];
+    } catch (error) {
+        console.error("Could not load saved applications:", error);
+
+        return [];
+    }
+}
+
+/**
+ * Save the current applications array in browser storage.
+ */
+function saveApplications() {
+    localStorage.setItem(storageKey, JSON.stringify(applications));
+}
+
+/* ---------------------------------
+   Date helpers
+--------------------------------- */
+
+/**
+ * Return today's date in YYYY-MM-DD format.
  */
 function getTodayDate() {
     const today = new Date();
@@ -31,68 +91,307 @@ function getTodayDate() {
 }
 
 /**
- * Open the application form modal.
+ * Convert YYYY-MM-DD into a readable date.
+ */
+function formatDate(dateValue) {
+    if (!dateValue) {
+        return "Not provided";
+    }
+
+    const date = new Date(`${dateValue}T00:00:00`);
+
+    return date.toLocaleDateString("en-CA", {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+    });
+}
+
+/* ---------------------------------
+   Modal controls
+--------------------------------- */
+
+/**
+ * Open the application form.
  */
 function openApplicationForm() {
     applicationModal.hidden = false;
     document.body.classList.add("modal-open");
 
-    // Add today's date only when the field is empty.
     if (!applicationDateInput.value) {
         applicationDateInput.value = getTodayDate();
     }
 
-    // Move the cursor to the company name field.
     companyNameInput.focus();
 }
 
 /**
- * Close the application form modal.
+ * Close the application form.
  */
 function closeApplicationForm() {
     applicationModal.hidden = true;
     document.body.classList.remove("modal-open");
-
-    // Return keyboard focus to the Add Application button.
     openApplicationFormButton.focus();
 }
 
-// Open the form when Add Application is clicked.
 openApplicationFormButton.addEventListener(
     "click",
     openApplicationForm
 );
 
-// Close the form using the × button.
 closeApplicationFormButton.addEventListener(
     "click",
     closeApplicationForm
 );
 
-// Close the form using the Cancel button.
 cancelApplicationFormButton.addEventListener(
     "click",
     closeApplicationForm
 );
 
-// Close the form when the dark background is clicked.
 applicationModal.addEventListener("click", function (event) {
     if (event.target === applicationModal) {
         closeApplicationForm();
     }
 });
 
-// Close the form when the Escape key is pressed.
 document.addEventListener("keydown", function (event) {
     if (event.key === "Escape" && !applicationModal.hidden) {
         closeApplicationForm();
     }
 });
 
-// Prevent the form from refreshing the page for now.
-// Database saving will be added in a later stage.
+/* ---------------------------------
+   Dashboard statistics
+--------------------------------- */
+
+/**
+ * Update the dashboard using the saved applications.
+ */
+function updateDashboard() {
+    const totalApplications = applications.length;
+
+    const interviewApplications = applications.filter(
+        function (application) {
+            return application.status === "Interview";
+        }
+    ).length;
+
+    const offerApplications = applications.filter(
+        function (application) {
+            return application.status === "Offer";
+        }
+    ).length;
+
+    const responseStatuses = [
+        "Assessment",
+        "Interview",
+        "Offer",
+        "Rejected"
+    ];
+
+    const applicationsWithResponses = applications.filter(
+        function (application) {
+            return responseStatuses.includes(application.status);
+        }
+    ).length;
+
+    const responseRate = totalApplications === 0
+        ? 0
+        : Math.round(
+            (applicationsWithResponses / totalApplications) * 100
+        );
+
+    totalApplicationsCount.textContent = totalApplications;
+    interviewsCount.textContent = interviewApplications;
+    offersCount.textContent = offerApplications;
+    responseRateCount.textContent = `${responseRate}%`;
+}
+
+/* ---------------------------------
+   Delete functionality
+--------------------------------- */
+
+/**
+ * Delete an application after the user confirms.
+ */
+function deleteApplication(applicationId) {
+    const applicationToDelete = applications.find(
+        function (application) {
+            return application.id === applicationId;
+        }
+    );
+
+    if (!applicationToDelete) {
+        return;
+    }
+
+    const confirmed = window.confirm(
+        `Delete the ${applicationToDelete.positionTitle} application at ${applicationToDelete.companyName}?`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    applications = applications.filter(
+        function (application) {
+            return application.id !== applicationId;
+        }
+    );
+
+    saveApplications();
+    renderApplications();
+}
+
+/* ---------------------------------
+   Application list
+--------------------------------- */
+
+/**
+ * Create and return one application list item.
+ */
+function createApplicationListItem(application) {
+    const listItem = document.createElement("li");
+
+    const heading = document.createElement("div");
+    const titleGroup = document.createElement("div");
+
+    const positionTitle = document.createElement("h3");
+    positionTitle.textContent = application.positionTitle;
+
+    const companyName = document.createElement("p");
+    companyName.textContent = application.companyName;
+
+    const status = document.createElement("span");
+    status.textContent = application.status;
+
+    titleGroup.append(positionTitle, companyName);
+    heading.append(titleGroup, status);
+
+    const details = document.createElement("div");
+
+    const location = document.createElement("p");
+    location.textContent = `Location: ${
+        application.location || "Not provided"
+    }`;
+
+    const applicationDate = document.createElement("p");
+    applicationDate.textContent = `Applied: ${formatDate(
+        application.applicationDate
+    )}`;
+
+    const salary = document.createElement("p");
+    salary.textContent = `Salary: ${
+        application.salary || "Not provided"
+    }`;
+
+    const followUpDate = document.createElement("p");
+    followUpDate.textContent = `Follow-up: ${formatDate(
+        application.followUpDate
+    )}`;
+
+    details.append(
+        location,
+        applicationDate,
+        salary,
+        followUpDate
+    );
+
+    if (application.jobLink) {
+        const jobLink = document.createElement("a");
+
+        jobLink.href = application.jobLink;
+        jobLink.target = "_blank";
+        jobLink.rel = "noopener noreferrer";
+        jobLink.textContent = "View job posting";
+
+        details.append(jobLink);
+    }
+
+    if (application.notes) {
+        const notes = document.createElement("p");
+        notes.textContent = `Notes: ${application.notes}`;
+
+        details.append(notes);
+    }
+
+    const actions = document.createElement("div");
+    actions.classList.add("application-actions");
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.classList.add("delete-application-button");
+    deleteButton.textContent = "Delete";
+
+    deleteButton.addEventListener("click", function () {
+        deleteApplication(application.id);
+    });
+
+    actions.append(deleteButton);
+
+    listItem.append(heading, details, actions);
+
+    return listItem;
+}
+
+/**
+ * Display all saved applications.
+ */
+function renderApplications() {
+    applicationsList.innerHTML = "";
+
+    if (applications.length === 0) {
+        emptyApplicationsMessage.hidden = false;
+    } else {
+        emptyApplicationsMessage.hidden = true;
+    }
+
+    applications.forEach(function (application) {
+        const listItem = createApplicationListItem(application);
+        applicationsList.append(listItem);
+    });
+
+    updateDashboard();
+}
+
+/* ---------------------------------
+   Form submission
+--------------------------------- */
+
 applicationForm.addEventListener("submit", function (event) {
     event.preventDefault();
 
-    console.log("Application form submitted.");
+    const formData = new FormData(applicationForm);
+
+    const newApplication = {
+        id: crypto.randomUUID(),
+        companyName: formData.get("companyName").trim(),
+        positionTitle: formData.get("positionTitle").trim(),
+        location: formData.get("jobLocation").trim(),
+        status: formData.get("applicationStatus"),
+        applicationDate: formData.get("applicationDate"),
+        salary: formData.get("salaryInformation").trim(),
+        jobLink: formData.get("jobLink").trim(),
+        interviewDate: formData.get("interviewDate"),
+        followUpDate: formData.get("followUpDate"),
+        notes: formData.get("applicationNotes").trim(),
+        createdAt: new Date().toISOString()
+    };
+
+    applications.unshift(newApplication);
+
+    saveApplications();
+    renderApplications();
+
+    applicationForm.reset();
+    applicationDateInput.value = getTodayDate();
+
+    closeApplicationForm();
 });
+
+/* ---------------------------------
+   Initial page display
+--------------------------------- */
+
+renderApplications();

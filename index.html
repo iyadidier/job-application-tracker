@@ -59,22 +59,34 @@
             <div>
                 <article>
                     <h3>Total Applications</h3>
-                    <p>0</p>
+
+                    <p id="total-applications-count">
+                        0
+                    </p>
                 </article>
 
                 <article>
                     <h3>Interviews</h3>
-                    <p>0</p>
+
+                    <p id="interviews-count">
+                        0
+                    </p>
                 </article>
 
                 <article>
                     <h3>Offers</h3>
-                    <p>0</p>
+
+                    <p id="offers-count">
+                        0
+                    </p>
                 </article>
 
                 <article>
                     <h3>Response Rate</h3>
-                    <p>0%</p>
+
+                    <p id="response-rate-count">
+                        0%
+                    </p>
                 </article>
             </div>
         </section>
@@ -91,9 +103,14 @@
                 </button>
             </div>
 
-            <p>
+            <p id="empty-applications-message">
                 No applications have been added yet.
             </p>
+
+            <ul
+                id="applications-list"
+                aria-live="polite"
+            ></ul>
         </section>
 
         <div
