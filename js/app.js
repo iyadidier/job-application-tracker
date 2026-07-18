@@ -1,88 +1,64 @@
 "use strict";
 
 /* ---------------------------------
-   Supabase
+   Supabase client
 --------------------------------- */
 
 const supabaseClient = window.supabaseClient;
 
 /* ---------------------------------
+   Helper
+--------------------------------- */
+
+function getElement(id) {
+    return document.getElementById(id);
+}
+
+/* ---------------------------------
    Authentication elements
 --------------------------------- */
 
-const guestNavigation = document.getElementById(
-    "guest-navigation"
-);
+const guestNavigation = getElement("guest-navigation");
+const userNavigation = getElement("user-navigation");
+const signedInUserEmail = getElement("signed-in-user-email");
 
-const userNavigation = document.getElementById(
-    "user-navigation"
-);
-
-const signedInUserEmail = document.getElementById(
-    "signed-in-user-email"
-);
-
-const openSignInButton = document.getElementById(
-    "open-sign-in-button"
-);
-
-const openCreateAccountButton = document.getElementById(
+const openSignInButton = getElement("open-sign-in-button");
+const openCreateAccountButton = getElement(
     "open-create-account-button"
 );
+const signOutButton = getElement("sign-out-button");
 
-const signOutButton = document.getElementById(
-    "sign-out-button"
-);
-
-const authenticationModal = document.getElementById(
-    "authentication-modal"
-);
-
-const authenticationTitle = document.getElementById(
-    "authentication-title"
-);
-
-const authenticationDescription = document.getElementById(
+const authenticationModal = getElement("authentication-modal");
+const authenticationTitle = getElement("authentication-title");
+const authenticationDescription = getElement(
     "authentication-description"
 );
-
-const closeAuthenticationButton = document.getElementById(
+const closeAuthenticationButton = getElement(
     "close-authentication-button"
 );
-
-const authenticationForm = document.getElementById(
-    "authentication-form"
-);
-
-const authenticationEmailInput = document.getElementById(
+const authenticationForm = getElement("authentication-form");
+const authenticationEmailInput = getElement(
     "authentication-email"
 );
-
-const authenticationPasswordInput = document.getElementById(
+const authenticationPasswordInput = getElement(
     "authentication-password"
 );
-
-const confirmPasswordField = document.getElementById(
+const confirmPasswordField = getElement(
     "confirm-password-field"
 );
-
-const authenticationConfirmPasswordInput = document.getElementById(
+const authenticationConfirmPasswordInput = getElement(
     "authentication-confirm-password"
 );
-
-const authenticationMessage = document.getElementById(
+const authenticationMessage = getElement(
     "authentication-message"
 );
-
-const authenticationSubmitButton = document.getElementById(
+const authenticationSubmitButton = getElement(
     "authentication-submit-button"
 );
-
-const authenticationSwitchText = document.getElementById(
+const authenticationSwitchText = getElement(
     "authentication-switch-text"
 );
-
-const switchAuthenticationModeButton = document.getElementById(
+const switchAuthenticationModeButton = getElement(
     "switch-authentication-mode"
 );
 
@@ -90,31 +66,22 @@ const switchAuthenticationModeButton = document.getElementById(
    Job application elements
 --------------------------------- */
 
-const applicationModal = document.getElementById(
-    "application-modal"
-);
-
-const applicationForm = document.getElementById(
-    "application-form"
-);
-
-const applicationFormTitle = document.getElementById(
+const applicationModal = getElement("application-modal");
+const applicationForm = getElement("application-form");
+const applicationFormTitle = getElement(
     "application-form-title"
 );
 
-const openApplicationFormButton = document.getElementById(
+const openApplicationFormButton = getElement(
     "open-application-form"
 );
-
-const exportApplicationsButton = document.getElementById(
+const exportApplicationsButton = getElement(
     "export-applications-button"
 );
-
-const closeApplicationFormButton = document.getElementById(
+const closeApplicationFormButton = getElement(
     "close-application-form"
 );
-
-const cancelApplicationFormButton = document.getElementById(
+const cancelApplicationFormButton = getElement(
     "cancel-application-form"
 );
 
@@ -122,83 +89,47 @@ const submitApplicationButton = applicationForm.querySelector(
     'button[type="submit"]'
 );
 
-const companyNameInput = document.getElementById(
-    "company-name"
-);
-
-const positionTitleInput = document.getElementById(
-    "position-title"
-);
-
-const jobLocationInput = document.getElementById(
-    "job-location"
-);
-
-const applicationStatusInput = document.getElementById(
+const companyNameInput = getElement("company-name");
+const positionTitleInput = getElement("position-title");
+const jobLocationInput = getElement("job-location");
+const applicationStatusInput = getElement(
     "application-status"
 );
-
-const applicationDateInput = document.getElementById(
+const applicationDateInput = getElement(
     "application-date"
 );
-
-const salaryInformationInput = document.getElementById(
+const salaryInformationInput = getElement(
     "salary-information"
 );
-
-const jobLinkInput = document.getElementById(
-    "job-link"
-);
-
-const interviewDateInput = document.getElementById(
-    "interview-date"
-);
-
-const followUpDateInput = document.getElementById(
-    "follow-up-date"
-);
-
-const applicationNotesInput = document.getElementById(
+const jobLinkInput = getElement("job-link");
+const interviewDateInput = getElement("interview-date");
+const followUpDateInput = getElement("follow-up-date");
+const applicationNotesInput = getElement(
     "application-notes"
 );
 
-const applicationSearchInput = document.getElementById(
+const applicationSearchInput = getElement(
     "application-search"
 );
-
-const statusFilterInput = document.getElementById(
-    "status-filter"
-);
-
-const sortApplicationsInput = document.getElementById(
+const statusFilterInput = getElement("status-filter");
+const sortApplicationsInput = getElement(
     "sort-applications"
 );
 
-const applicationsResultsMessage = document.getElementById(
+const applicationsResultsMessage = getElement(
     "applications-results-message"
 );
-
-const applicationsList = document.getElementById(
-    "applications-list"
-);
-
-const emptyApplicationsMessage = document.getElementById(
+const applicationsList = getElement("applications-list");
+const emptyApplicationsMessage = getElement(
     "empty-applications-message"
 );
 
-const totalApplicationsCount = document.getElementById(
+const totalApplicationsCount = getElement(
     "total-applications-count"
 );
-
-const interviewsCount = document.getElementById(
-    "interviews-count"
-);
-
-const offersCount = document.getElementById(
-    "offers-count"
-);
-
-const responseRateCount = document.getElementById(
+const interviewsCount = getElement("interviews-count");
+const offersCount = getElement("offers-count");
+const responseRateCount = getElement(
     "response-rate-count"
 );
 
@@ -206,20 +137,21 @@ const responseRateCount = document.getElementById(
    Application state
 --------------------------------- */
 
-const storageKey = "jobTrackApplications";
-
-let applications = loadApplications();
+let currentUser = null;
+let applications = [];
 let editingApplicationId = null;
 let authenticationMode = "sign-in";
+let isLoadingApplications = false;
+let databaseErrorMessage = "";
 
 /* ---------------------------------
-   Authentication helpers
+   Authentication interface
 --------------------------------- */
 
-/**
- * Display an authentication message.
- */
-function setAuthenticationMessage(message, messageType = "") {
+function setAuthenticationMessage(
+    message,
+    messageType = ""
+) {
     authenticationMessage.textContent = message;
 
     authenticationMessage.classList.remove(
@@ -240,10 +172,6 @@ function setAuthenticationMessage(message, messageType = "") {
     }
 }
 
-/**
- * Configure the authentication form for sign-in
- * or account-creation mode.
- */
 function setAuthenticationMode(mode) {
     authenticationMode = mode;
     authenticationForm.reset();
@@ -265,7 +193,6 @@ function setAuthenticationMode(mode) {
             "Sign In";
 
         confirmPasswordField.hidden = false;
-
         authenticationConfirmPasswordInput.required = true;
 
         authenticationPasswordInput.autocomplete =
@@ -288,16 +215,12 @@ function setAuthenticationMode(mode) {
         "Create Account";
 
     confirmPasswordField.hidden = true;
-
     authenticationConfirmPasswordInput.required = false;
 
     authenticationPasswordInput.autocomplete =
         "current-password";
 }
 
-/**
- * Open the authentication modal.
- */
 function openAuthenticationModal(mode) {
     setAuthenticationMode(mode);
 
@@ -307,24 +230,15 @@ function openAuthenticationModal(mode) {
     authenticationEmailInput.focus();
 }
 
-/**
- * Close the authentication modal.
- */
 function closeAuthenticationModal() {
     authenticationModal.hidden = true;
     document.body.classList.remove("modal-open");
 
     authenticationForm.reset();
-    setAuthenticationMessage("");
     setAuthenticationMode("sign-in");
 }
 
-/**
- * Update the navigation using the current session.
- */
-function updateAuthenticationNavigation(session) {
-    const user = session?.user || null;
-
+function updateAuthenticationNavigation(user) {
     if (user) {
         guestNavigation.hidden = true;
         userNavigation.hidden = false;
@@ -341,7 +255,7 @@ function updateAuthenticationNavigation(session) {
 }
 
 /* ---------------------------------
-   Authentication modal events
+   Authentication events
 --------------------------------- */
 
 openSignInButton.addEventListener("click", function () {
@@ -363,9 +277,10 @@ closeAuthenticationButton.addEventListener(
 switchAuthenticationModeButton.addEventListener(
     "click",
     function () {
-        const nextMode = authenticationMode === "sign-in"
-            ? "create-account"
-            : "sign-in";
+        const nextMode =
+            authenticationMode === "sign-in"
+                ? "create-account"
+                : "sign-in";
 
         setAuthenticationMode(nextMode);
         authenticationEmailInput.focus();
@@ -409,23 +324,20 @@ authenticationForm.addEventListener(
         const confirmPassword =
             authenticationConfirmPasswordInput.value;
 
-        if (authenticationMode === "create-account") {
-            if (password !== confirmPassword) {
-                setAuthenticationMessage(
-                    "The passwords do not match.",
-                    "error"
-                );
+        if (
+            authenticationMode === "create-account"
+            && password !== confirmPassword
+        ) {
+            setAuthenticationMessage(
+                "The passwords do not match.",
+                "error"
+            );
 
-                authenticationConfirmPasswordInput.focus();
-
-                return;
-            }
+            authenticationConfirmPasswordInput.focus();
+            return;
         }
 
         authenticationSubmitButton.disabled = true;
-
-        const originalButtonText =
-            authenticationSubmitButton.textContent;
 
         authenticationSubmitButton.textContent =
             authenticationMode === "create-account"
@@ -459,14 +371,16 @@ authenticationForm.addEventListener(
                     );
 
                     authenticationPasswordInput.value = "";
-                    authenticationConfirmPasswordInput.value = "";
+                    authenticationConfirmPasswordInput.value =
+                        "";
                 }
             } else {
                 const { error } =
-                    await supabaseClient.auth.signInWithPassword({
-                        email,
-                        password
-                    });
+                    await supabaseClient.auth
+                        .signInWithPassword({
+                            email,
+                            password
+                        });
 
                 if (error) {
                     throw error;
@@ -478,8 +392,8 @@ authenticationForm.addEventListener(
             console.error("Authentication error:", error);
 
             setAuthenticationMessage(
-                error.message
-                    || "Authentication was unsuccessful.",
+                error.message ||
+                    "Authentication was unsuccessful.",
                 "error"
             );
         } finally {
@@ -487,7 +401,9 @@ authenticationForm.addEventListener(
 
             if (!authenticationModal.hidden) {
                 authenticationSubmitButton.textContent =
-                    originalButtonText;
+                    authenticationMode === "create-account"
+                        ? "Create Account"
+                        : "Sign In";
             }
         }
     }
@@ -516,7 +432,8 @@ signOutButton.addEventListener(
             console.error("Sign-out error:", error);
 
             window.alert(
-                error.message || "Sign out was unsuccessful."
+                error.message ||
+                    "Sign out was unsuccessful."
             );
         }
 
@@ -526,23 +443,199 @@ signOutButton.addEventListener(
 );
 
 /* ---------------------------------
-   Authentication session listener
+   Database row conversion
 --------------------------------- */
 
+function convertDatabaseRow(row) {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        companyName: row.company_name,
+        positionTitle: row.position_title,
+        location: row.job_location || "",
+        status: row.status,
+        applicationDate: row.application_date,
+        salary: row.salary_information || "",
+        jobLink: row.job_posting_url || "",
+        interviewDate: row.interview_date || "",
+        followUpDate: row.follow_up_date || "",
+        notes: row.notes || "",
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+    };
+}
+
+function createDatabasePayload(formData) {
+    const location = formData
+        .get("jobLocation")
+        .trim();
+
+    const salary = formData
+        .get("salaryInformation")
+        .trim();
+
+    const jobLink = formData
+        .get("jobLink")
+        .trim();
+
+    const interviewDate = formData.get(
+        "interviewDate"
+    );
+
+    const followUpDate = formData.get(
+        "followUpDate"
+    );
+
+    const notes = formData
+        .get("applicationNotes")
+        .trim();
+
+    return {
+        company_name: formData
+            .get("companyName")
+            .trim(),
+
+        position_title: formData
+            .get("positionTitle")
+            .trim(),
+
+        job_location: location || null,
+
+        status: formData.get(
+            "applicationStatus"
+        ),
+
+        application_date: formData.get(
+            "applicationDate"
+        ),
+
+        salary_information: salary || null,
+
+        job_posting_url: jobLink || null,
+
+        interview_date: interviewDate || null,
+
+        follow_up_date: followUpDate || null,
+
+        notes: notes || null
+    };
+}
+
+/* ---------------------------------
+   Database loading
+--------------------------------- */
+
+async function loadApplicationsFromDatabase() {
+    if (!currentUser) {
+        applications = [];
+        renderApplications();
+        return;
+    }
+
+    isLoadingApplications = true;
+    databaseErrorMessage = "";
+    renderApplications();
+
+    try {
+        const { data, error } = await supabaseClient
+            .from("job_applications")
+            .select("*")
+            .eq("user_id", currentUser.id)
+            .order("application_date", {
+                ascending: false
+            })
+            .order("created_at", {
+                ascending: false
+            });
+
+        if (error) {
+            throw error;
+        }
+
+        applications = (data || []).map(
+            convertDatabaseRow
+        );
+    } catch (error) {
+        console.error(
+            "Could not load applications:",
+            error
+        );
+
+        applications = [];
+
+        databaseErrorMessage =
+            error.message ||
+            "Your applications could not be loaded.";
+    } finally {
+        isLoadingApplications = false;
+        renderApplications();
+    }
+}
+
+/* ---------------------------------
+   Authentication state changes
+--------------------------------- */
+
+async function handleAuthenticationChange(
+    event,
+    session
+) {
+    const previousUserId = currentUser?.id || null;
+
+    currentUser = session?.user || null;
+
+    updateAuthenticationNavigation(currentUser);
+
+    if (!currentUser) {
+        applications = [];
+        editingApplicationId = null;
+        databaseErrorMessage = "";
+
+        applicationSearchInput.value = "";
+        statusFilterInput.value = "All";
+        sortApplicationsInput.value = "newest";
+
+        if (!applicationModal.hidden) {
+            applicationModal.hidden = true;
+            document.body.classList.remove("modal-open");
+        }
+
+        renderApplications();
+        return;
+    }
+
+    if (
+        !authenticationModal.hidden
+        && (
+            event === "SIGNED_IN"
+            || event === "INITIAL_SESSION"
+        )
+    ) {
+        closeAuthenticationModal();
+    }
+
+    const userChanged =
+        previousUserId !== currentUser.id;
+
+    if (
+        userChanged
+        || event === "INITIAL_SESSION"
+    ) {
+        await loadApplicationsFromDatabase();
+    }
+}
+
 if (supabaseClient) {
+    /*
+     * The callback itself stays synchronous.
+     * The asynchronous work runs in a separate function.
+     */
     supabaseClient.auth.onAuthStateChange(
         function (event, session) {
-            updateAuthenticationNavigation(session);
-
-            if (event === "SIGNED_IN") {
-                if (!authenticationModal.hidden) {
-                    closeAuthenticationModal();
-                }
-            }
-
-            if (event === "SIGNED_OUT") {
-                updateAuthenticationNavigation(null);
-            }
+            void handleAuthenticationChange(
+                event,
+                session
+            );
         }
     );
 } else {
@@ -554,70 +647,9 @@ if (supabaseClient) {
 }
 
 /* ---------------------------------
-   Browser application storage
---------------------------------- */
-
-/**
- * Load applications from browser storage.
- */
-function loadApplications() {
-    const savedApplications =
-        localStorage.getItem(storageKey);
-
-    if (!savedApplications) {
-        return [];
-    }
-
-    try {
-        const parsedApplications =
-            JSON.parse(savedApplications);
-
-        return Array.isArray(parsedApplications)
-            ? parsedApplications
-            : [];
-    } catch (error) {
-        console.error(
-            "Could not load saved applications:",
-            error
-        );
-
-        return [];
-    }
-}
-
-/**
- * Save applications in browser storage.
- */
-function saveApplications() {
-    localStorage.setItem(
-        storageKey,
-        JSON.stringify(applications)
-    );
-}
-
-/**
- * Create a unique application ID.
- */
-function createApplicationId() {
-    if (
-        typeof crypto !== "undefined"
-        && typeof crypto.randomUUID === "function"
-    ) {
-        return crypto.randomUUID();
-    }
-
-    return `${Date.now()}-${Math.random()
-        .toString(16)
-        .slice(2)}`;
-}
-
-/* ---------------------------------
    Date helpers
 --------------------------------- */
 
-/**
- * Return today's date in YYYY-MM-DD format.
- */
 function getTodayDate() {
     const today = new Date();
 
@@ -634,9 +666,6 @@ function getTodayDate() {
     return `${year}-${month}-${day}`;
 }
 
-/**
- * Convert YYYY-MM-DD into a readable date.
- */
 function formatDate(dateValue) {
     if (!dateValue) {
         return "Not provided";
@@ -654,12 +683,9 @@ function formatDate(dateValue) {
 }
 
 /* ---------------------------------
-   Application form controls
+   Application modal
 --------------------------------- */
 
-/**
- * Reset the form to Add Application mode.
- */
 function resetApplicationForm() {
     applicationForm.reset();
 
@@ -674,29 +700,28 @@ function resetApplicationForm() {
     applicationDateInput.value = getTodayDate();
 }
 
-/**
- * Display the job application modal.
- */
 function showApplicationModal() {
-    applicationModal.hidden = false;
+    if (!currentUser) {
+        openAuthenticationModal("sign-in");
+        return;
+    }
 
+    applicationModal.hidden = false;
     document.body.classList.add("modal-open");
 
     companyNameInput.focus();
 }
 
-/**
- * Open a blank application form.
- */
 function openNewApplicationForm() {
     resetApplicationForm();
     showApplicationModal();
 }
 
-/**
- * Open an existing application for editing.
- */
 function openEditApplicationForm(applicationId) {
+    if (!currentUser) {
+        return;
+    }
+
     const applicationToEdit = applications.find(
         function (application) {
             return application.id === applicationId;
@@ -748,17 +773,15 @@ function openEditApplicationForm(applicationId) {
     showApplicationModal();
 }
 
-/**
- * Close the application modal.
- */
 function closeApplicationForm() {
     applicationModal.hidden = true;
-
     document.body.classList.remove("modal-open");
 
     resetApplicationForm();
 
-    openApplicationFormButton.focus();
+    if (!openApplicationFormButton.disabled) {
+        openApplicationFormButton.focus();
+    }
 }
 
 openApplicationFormButton.addEventListener(
@@ -786,7 +809,7 @@ applicationModal.addEventListener(
 );
 
 /* ---------------------------------
-   Escape-key controls
+   Escape key
 --------------------------------- */
 
 document.addEventListener(
@@ -808,12 +831,9 @@ document.addEventListener(
 );
 
 /* ---------------------------------
-   Dashboard statistics
+   Dashboard
 --------------------------------- */
 
-/**
- * Update dashboard statistics.
- */
 function updateDashboard() {
     const totalApplications = applications.length;
 
@@ -871,12 +891,9 @@ function updateDashboard() {
 }
 
 /* ---------------------------------
-   Search, filtering, and sorting
+   Search, filter, and sort
 --------------------------------- */
 
-/**
- * Return applications matching the controls.
- */
 function getFilteredApplications() {
     const searchTerm =
         applicationSearchInput.value
@@ -913,24 +930,14 @@ function getFilteredApplications() {
     );
 }
 
-/**
- * Sort an application array.
- */
-function sortApplicationResults(
-    applicationResults
-) {
+function sortApplicationResults(results) {
     const selectedSort =
         sortApplicationsInput.value;
 
-    const sortedApplications = [
-        ...applicationResults
-    ];
+    const sortedApplications = [...results];
 
     sortedApplications.sort(
-        function (
-            firstApplication,
-            secondApplication
-        ) {
+        function (firstApplication, secondApplication) {
             if (selectedSort === "oldest") {
                 return (
                     firstApplication.applicationDate || ""
@@ -940,8 +947,7 @@ function sortApplicationResults(
             }
 
             if (
-                selectedSort ===
-                "company-ascending"
+                selectedSort === "company-ascending"
             ) {
                 return (
                     firstApplication.companyName || ""
@@ -953,8 +959,7 @@ function sortApplicationResults(
             }
 
             if (
-                selectedSort ===
-                "company-descending"
+                selectedSort === "company-descending"
             ) {
                 return (
                     secondApplication.companyName || ""
@@ -966,8 +971,7 @@ function sortApplicationResults(
             }
 
             if (
-                selectedSort ===
-                "position-ascending"
+                selectedSort === "position-ascending"
             ) {
                 return (
                     firstApplication.positionTitle || ""
@@ -989,57 +993,439 @@ function sortApplicationResults(
     return sortedApplications;
 }
 
-/**
- * Return filtered and sorted applications.
- */
 function getVisibleApplications() {
     return sortApplicationResults(
         getFilteredApplications()
     );
 }
 
-/**
- * Update the results message.
- */
-function updateResultsMessage(visibleCount) {
-    if (applications.length === 0) {
-        applicationsResultsMessage.textContent = "";
+/* ---------------------------------
+   Delete application
+--------------------------------- */
+
+async function deleteApplication(applicationId) {
+    if (!currentUser) {
         return;
     }
 
-    if (visibleCount === applications.length) {
+    const applicationToDelete = applications.find(
+        function (application) {
+            return application.id === applicationId;
+        }
+    );
+
+    if (!applicationToDelete) {
+        return;
+    }
+
+    const confirmed = window.confirm(
+        `Delete the ${applicationToDelete.positionTitle} application at ${applicationToDelete.companyName}?`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const { error } = await supabaseClient
+            .from("job_applications")
+            .delete()
+            .eq("id", applicationId)
+            .eq("user_id", currentUser.id);
+
+        if (error) {
+            throw error;
+        }
+
+        applications = applications.filter(
+            function (application) {
+                return application.id !== applicationId;
+            }
+        );
+
+        renderApplications();
+    } catch (error) {
+        console.error(
+            "Could not delete application:",
+            error
+        );
+
+        window.alert(
+            error.message ||
+                "The application could not be deleted."
+        );
+    }
+}
+
+/* ---------------------------------
+   Application cards
+--------------------------------- */
+
+function createApplicationListItem(application) {
+    const listItem = document.createElement("li");
+
+    const heading = document.createElement("div");
+    const titleGroup = document.createElement("div");
+
+    const positionTitle =
+        document.createElement("h3");
+
+    positionTitle.textContent =
+        application.positionTitle;
+
+    const companyName =
+        document.createElement("p");
+
+    companyName.textContent =
+        application.companyName;
+
+    const status =
+        document.createElement("span");
+
+    status.textContent = application.status;
+
+    titleGroup.append(
+        positionTitle,
+        companyName
+    );
+
+    heading.append(titleGroup, status);
+
+    const details = document.createElement("div");
+
+    const location = document.createElement("p");
+
+    location.textContent =
+        `Location: ${
+            application.location || "Not provided"
+        }`;
+
+    const applicationDate =
+        document.createElement("p");
+
+    applicationDate.textContent =
+        `Applied: ${formatDate(
+            application.applicationDate
+        )}`;
+
+    const salary = document.createElement("p");
+
+    salary.textContent =
+        `Salary: ${
+            application.salary || "Not provided"
+        }`;
+
+    const followUpDate =
+        document.createElement("p");
+
+    followUpDate.textContent =
+        `Follow-up: ${formatDate(
+            application.followUpDate
+        )}`;
+
+    details.append(
+        location,
+        applicationDate,
+        salary,
+        followUpDate
+    );
+
+    if (application.interviewDate) {
+        const interviewDate =
+            document.createElement("p");
+
+        interviewDate.textContent =
+            `Interview: ${formatDate(
+                application.interviewDate
+            )}`;
+
+        details.append(interviewDate);
+    }
+
+    if (application.jobLink) {
+        const jobLink =
+            document.createElement("a");
+
+        jobLink.href = application.jobLink;
+        jobLink.target = "_blank";
+        jobLink.rel = "noopener noreferrer";
+        jobLink.textContent = "View job posting";
+
+        details.append(jobLink);
+    }
+
+    if (application.notes) {
+        const notes = document.createElement("p");
+
+        notes.textContent =
+            `Notes: ${application.notes}`;
+
+        details.append(notes);
+    }
+
+    const actions = document.createElement("div");
+
+    actions.classList.add(
+        "application-actions"
+    );
+
+    const editButton =
+        document.createElement("button");
+
+    editButton.type = "button";
+
+    editButton.classList.add(
+        "edit-application-button"
+    );
+
+    editButton.textContent = "Edit";
+
+    editButton.addEventListener(
+        "click",
+        function () {
+            openEditApplicationForm(
+                application.id
+            );
+        }
+    );
+
+    const deleteButton =
+        document.createElement("button");
+
+    deleteButton.type = "button";
+
+    deleteButton.classList.add(
+        "delete-application-button"
+    );
+
+    deleteButton.textContent = "Delete";
+
+    deleteButton.addEventListener(
+        "click",
+        function () {
+            void deleteApplication(
+                application.id
+            );
+        }
+    );
+
+    actions.append(editButton, deleteButton);
+
+    listItem.append(
+        heading,
+        details,
+        actions
+    );
+
+    return listItem;
+}
+
+/* ---------------------------------
+   Tracker availability and rendering
+--------------------------------- */
+
+function updateTrackerAvailability() {
+    const unavailable =
+        !currentUser || isLoadingApplications;
+
+    openApplicationFormButton.disabled =
+        unavailable;
+
+    applicationSearchInput.disabled =
+        unavailable;
+
+    statusFilterInput.disabled =
+        unavailable;
+
+    sortApplicationsInput.disabled =
+        unavailable;
+
+    exportApplicationsButton.disabled =
+        unavailable || applications.length === 0;
+}
+
+function renderApplications() {
+    applicationsList.innerHTML = "";
+
+    const visibleApplications =
+        currentUser && !isLoadingApplications
+            ? getVisibleApplications()
+            : [];
+
+    if (!currentUser) {
+        emptyApplicationsMessage.hidden = false;
+
+        emptyApplicationsMessage.textContent =
+            "Sign in to view and manage your job applications.";
+    } else if (isLoadingApplications) {
+        emptyApplicationsMessage.hidden = false;
+
+        emptyApplicationsMessage.textContent =
+            "Loading your applications...";
+    } else if (applications.length === 0) {
+        emptyApplicationsMessage.hidden = false;
+
+        emptyApplicationsMessage.textContent =
+            "No applications have been added yet.";
+    } else {
+        emptyApplicationsMessage.hidden = true;
+    }
+
+    visibleApplications.forEach(
+        function (application) {
+            applicationsList.append(
+                createApplicationListItem(
+                    application
+                )
+            );
+        }
+    );
+
+    if (databaseErrorMessage) {
+        applicationsResultsMessage.textContent =
+            databaseErrorMessage;
+    } else if (
+        !currentUser
+        || isLoadingApplications
+        || applications.length === 0
+    ) {
+        applicationsResultsMessage.textContent = "";
+    } else if (visibleApplications.length === 0) {
+        applicationsResultsMessage.textContent =
+            "No applications match your current search or filter.";
+    } else if (
+        visibleApplications.length
+        === applications.length
+    ) {
         applicationsResultsMessage.textContent =
             `Showing all ${applications.length} applications.`;
-
-        return;
+    } else {
+        applicationsResultsMessage.textContent =
+            `Showing ${visibleApplications.length} of ${applications.length} applications.`;
     }
 
-    applicationsResultsMessage.textContent =
-        `Showing ${visibleCount} of ${applications.length} applications.`;
+    updateDashboard();
+    updateTrackerAvailability();
 }
+
+/* ---------------------------------
+   Save or update application
+--------------------------------- */
+
+applicationForm.addEventListener(
+    "submit",
+    async function (event) {
+        event.preventDefault();
+
+        if (!currentUser) {
+            closeApplicationForm();
+            openAuthenticationModal("sign-in");
+            return;
+        }
+
+        const formData =
+            new FormData(applicationForm);
+
+        const databasePayload =
+            createDatabasePayload(formData);
+
+        submitApplicationButton.disabled = true;
+
+        submitApplicationButton.textContent =
+            editingApplicationId
+                ? "Updating..."
+                : "Saving...";
+
+        try {
+            if (editingApplicationId) {
+                const { data, error } =
+                    await supabaseClient
+                        .from("job_applications")
+                        .update(databasePayload)
+                        .eq(
+                            "id",
+                            editingApplicationId
+                        )
+                        .eq(
+                            "user_id",
+                            currentUser.id
+                        )
+                        .select()
+                        .single();
+
+                if (error) {
+                    throw error;
+                }
+
+                const updatedApplication =
+                    convertDatabaseRow(data);
+
+                applications = applications.map(
+                    function (application) {
+                        return application.id
+                            === updatedApplication.id
+                            ? updatedApplication
+                            : application;
+                    }
+                );
+            } else {
+                const { data, error } =
+                    await supabaseClient
+                        .from("job_applications")
+                        .insert({
+                            ...databasePayload,
+                            user_id: currentUser.id
+                        })
+                        .select()
+                        .single();
+
+                if (error) {
+                    throw error;
+                }
+
+                applications.unshift(
+                    convertDatabaseRow(data)
+                );
+            }
+
+            closeApplicationForm();
+            renderApplications();
+        } catch (error) {
+            console.error(
+                "Could not save application:",
+                error
+            );
+
+            window.alert(
+                error.message ||
+                    "The application could not be saved."
+            );
+        } finally {
+            submitApplicationButton.disabled = false;
+
+            if (!applicationModal.hidden) {
+                submitApplicationButton.textContent =
+                    editingApplicationId
+                        ? "Update Application"
+                        : "Save Application";
+            }
+        }
+    }
+);
 
 /* ---------------------------------
    CSV export
 --------------------------------- */
 
-/**
- * Escape one CSV value.
- */
 function escapeCsvValue(value) {
     const textValue =
         value === null || value === undefined
             ? ""
             : String(value);
 
-    const escapedValue =
-        textValue.replace(/"/g, '""');
-
-    return `"${escapedValue}"`;
+    return `"${textValue.replace(/"/g, '""')}"`;
 }
 
-/**
- * Export all saved applications.
- */
 function exportApplicationsToCsv() {
     if (applications.length === 0) {
         window.alert(
@@ -1083,15 +1469,13 @@ function exportApplicationsToCsv() {
         }
     );
 
-    const csvRows = [headers, ...rows].map(
-        function (row) {
+    const csvContent = [headers, ...rows]
+        .map(function (row) {
             return row
                 .map(escapeCsvValue)
                 .join(",");
-        }
-    );
-
-    const csvContent = csvRows.join("\r\n");
+        })
+        .join("\r\n");
 
     const csvFile = new Blob(
         ["\uFEFF", csvContent],
@@ -1124,373 +1508,7 @@ exportApplicationsButton.addEventListener(
 );
 
 /* ---------------------------------
-   Delete functionality
---------------------------------- */
-
-/**
- * Delete an application.
- */
-function deleteApplication(applicationId) {
-    const applicationToDelete =
-        applications.find(
-            function (application) {
-                return application.id === applicationId;
-            }
-        );
-
-    if (!applicationToDelete) {
-        return;
-    }
-
-    const confirmed = window.confirm(
-        `Delete the ${applicationToDelete.positionTitle} application at ${applicationToDelete.companyName}?`
-    );
-
-    if (!confirmed) {
-        return;
-    }
-
-    applications = applications.filter(
-        function (application) {
-            return application.id !== applicationId;
-        }
-    );
-
-    saveApplications();
-    renderApplications();
-}
-
-/* ---------------------------------
-   Application cards
---------------------------------- */
-
-/**
- * Create one application card.
- */
-function createApplicationListItem(application) {
-    const listItem =
-        document.createElement("li");
-
-    const heading =
-        document.createElement("div");
-
-    const titleGroup =
-        document.createElement("div");
-
-    const positionTitle =
-        document.createElement("h3");
-
-    positionTitle.textContent =
-        application.positionTitle;
-
-    const companyName =
-        document.createElement("p");
-
-    companyName.textContent =
-        application.companyName;
-
-    const status =
-        document.createElement("span");
-
-    status.textContent =
-        application.status;
-
-    titleGroup.append(
-        positionTitle,
-        companyName
-    );
-
-    heading.append(
-        titleGroup,
-        status
-    );
-
-    const details =
-        document.createElement("div");
-
-    const location =
-        document.createElement("p");
-
-    location.textContent =
-        `Location: ${
-            application.location || "Not provided"
-        }`;
-
-    const applicationDate =
-        document.createElement("p");
-
-    applicationDate.textContent =
-        `Applied: ${formatDate(
-            application.applicationDate
-        )}`;
-
-    const salary =
-        document.createElement("p");
-
-    salary.textContent =
-        `Salary: ${
-            application.salary || "Not provided"
-        }`;
-
-    const followUpDate =
-        document.createElement("p");
-
-    followUpDate.textContent =
-        `Follow-up: ${formatDate(
-            application.followUpDate
-        )}`;
-
-    details.append(
-        location,
-        applicationDate,
-        salary,
-        followUpDate
-    );
-
-    if (application.interviewDate) {
-        const interviewDate =
-            document.createElement("p");
-
-        interviewDate.textContent =
-            `Interview: ${formatDate(
-                application.interviewDate
-            )}`;
-
-        details.append(interviewDate);
-    }
-
-    if (application.jobLink) {
-        const jobLink =
-            document.createElement("a");
-
-        jobLink.href =
-            application.jobLink;
-
-        jobLink.target = "_blank";
-
-        jobLink.rel =
-            "noopener noreferrer";
-
-        jobLink.textContent =
-            "View job posting";
-
-        details.append(jobLink);
-    }
-
-    if (application.notes) {
-        const notes =
-            document.createElement("p");
-
-        notes.textContent =
-            `Notes: ${application.notes}`;
-
-        details.append(notes);
-    }
-
-    const actions =
-        document.createElement("div");
-
-    actions.classList.add(
-        "application-actions"
-    );
-
-    const editButton =
-        document.createElement("button");
-
-    editButton.type = "button";
-
-    editButton.classList.add(
-        "edit-application-button"
-    );
-
-    editButton.textContent = "Edit";
-
-    editButton.addEventListener(
-        "click",
-        function () {
-            openEditApplicationForm(
-                application.id
-            );
-        }
-    );
-
-    const deleteButton =
-        document.createElement("button");
-
-    deleteButton.type = "button";
-
-    deleteButton.classList.add(
-        "delete-application-button"
-    );
-
-    deleteButton.textContent = "Delete";
-
-    deleteButton.addEventListener(
-        "click",
-        function () {
-            deleteApplication(application.id);
-        }
-    );
-
-    actions.append(
-        editButton,
-        deleteButton
-    );
-
-    listItem.append(
-        heading,
-        details,
-        actions
-    );
-
-    return listItem;
-}
-
-/**
- * Display all visible applications.
- */
-function renderApplications() {
-    applicationsList.innerHTML = "";
-
-    const visibleApplications =
-        getVisibleApplications();
-
-    emptyApplicationsMessage.hidden =
-        applications.length !== 0;
-
-    exportApplicationsButton.disabled =
-        applications.length === 0;
-
-    visibleApplications.forEach(
-        function (application) {
-            const listItem =
-                createApplicationListItem(
-                    application
-                );
-
-            applicationsList.append(listItem);
-        }
-    );
-
-    if (
-        applications.length > 0
-        && visibleApplications.length === 0
-    ) {
-        applicationsResultsMessage.textContent =
-            "No applications match your current search or filter.";
-    } else {
-        updateResultsMessage(
-            visibleApplications.length
-        );
-    }
-
-    updateDashboard();
-}
-
-/* ---------------------------------
-   Application form submission
---------------------------------- */
-
-applicationForm.addEventListener(
-    "submit",
-    function (event) {
-        event.preventDefault();
-
-        const formData =
-            new FormData(applicationForm);
-
-        const applicationInformation = {
-            companyName:
-                formData
-                    .get("companyName")
-                    .trim(),
-
-            positionTitle:
-                formData
-                    .get("positionTitle")
-                    .trim(),
-
-            location:
-                formData
-                    .get("jobLocation")
-                    .trim(),
-
-            status:
-                formData.get(
-                    "applicationStatus"
-                ),
-
-            applicationDate:
-                formData.get(
-                    "applicationDate"
-                ),
-
-            salary:
-                formData
-                    .get("salaryInformation")
-                    .trim(),
-
-            jobLink:
-                formData
-                    .get("jobLink")
-                    .trim(),
-
-            interviewDate:
-                formData.get(
-                    "interviewDate"
-                ),
-
-            followUpDate:
-                formData.get(
-                    "followUpDate"
-                ),
-
-            notes:
-                formData
-                    .get("applicationNotes")
-                    .trim()
-        };
-
-        if (editingApplicationId) {
-            applications = applications.map(
-                function (application) {
-                    if (
-                        application.id
-                        !== editingApplicationId
-                    ) {
-                        return application;
-                    }
-
-                    return {
-                        ...application,
-                        ...applicationInformation,
-                        updatedAt:
-                            new Date().toISOString()
-                    };
-                }
-            );
-        } else {
-            const newApplication = {
-                id: createApplicationId(),
-                ...applicationInformation,
-                createdAt:
-                    new Date().toISOString(),
-                updatedAt: null
-            };
-
-            applications.unshift(
-                newApplication
-            );
-        }
-
-        saveApplications();
-        renderApplications();
-        closeApplicationForm();
-    }
-);
-
-/* ---------------------------------
-   Search and sorting events
+   Search, filter, and sort events
 --------------------------------- */
 
 applicationSearchInput.addEventListener(
@@ -1509,9 +1527,10 @@ sortApplicationsInput.addEventListener(
 );
 
 /* ---------------------------------
-   Initial page display
+   Initial interface
 --------------------------------- */
 
 setAuthenticationMode("sign-in");
 resetApplicationForm();
+updateAuthenticationNavigation(null);
 renderApplications();
