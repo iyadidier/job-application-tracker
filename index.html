@@ -103,6 +103,94 @@
                 </button>
             </div>
 
+            <form
+                id="application-controls"
+                role="search"
+            >
+                <div>
+                    <label for="application-search">
+                        Search
+                    </label>
+
+                    <input
+                        id="application-search"
+                        type="search"
+                        placeholder="Search company, position, or location"
+                        autocomplete="off"
+                    >
+                </div>
+
+                <div>
+                    <label for="status-filter">
+                        Status
+                    </label>
+
+                    <select id="status-filter">
+                        <option value="All">
+                            All statuses
+                        </option>
+
+                        <option value="Interested">
+                            Interested
+                        </option>
+
+                        <option value="Applied">
+                            Applied
+                        </option>
+
+                        <option value="Assessment">
+                            Assessment
+                        </option>
+
+                        <option value="Interview">
+                            Interview
+                        </option>
+
+                        <option value="Offer">
+                            Offer
+                        </option>
+
+                        <option value="Rejected">
+                            Rejected
+                        </option>
+
+                        <option value="Withdrawn">
+                            Withdrawn
+                        </option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="sort-applications">
+                        Sort by
+                    </label>
+
+                    <select id="sort-applications">
+                        <option value="newest">
+                            Newest first
+                        </option>
+
+                        <option value="oldest">
+                            Oldest first
+                        </option>
+
+                        <option value="company-ascending">
+                            Company: A–Z
+                        </option>
+
+                        <option value="company-descending">
+                            Company: Z–A
+                        </option>
+
+                        <option value="position-ascending">
+                            Position: A–Z
+                        </option>
+                    </select>
+                </div>
+            </form>
+
+            <p id="applications-results-message"></p>
+
             <p id="empty-applications-message">
                 No applications have been added yet.
             </p>

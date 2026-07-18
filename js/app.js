@@ -6,6 +6,7 @@
 
 const applicationModal = document.getElementById("application-modal");
 const applicationForm = document.getElementById("application-form");
+
 const applicationFormTitle = document.getElementById(
     "application-form-title"
 );
@@ -29,20 +30,39 @@ const submitApplicationButton = applicationForm.querySelector(
 const companyNameInput = document.getElementById("company-name");
 const positionTitleInput = document.getElementById("position-title");
 const jobLocationInput = document.getElementById("job-location");
+
 const applicationStatusInput = document.getElementById(
     "application-status"
 );
+
 const applicationDateInput = document.getElementById(
     "application-date"
 );
+
 const salaryInformationInput = document.getElementById(
     "salary-information"
 );
+
 const jobLinkInput = document.getElementById("job-link");
 const interviewDateInput = document.getElementById("interview-date");
 const followUpDateInput = document.getElementById("follow-up-date");
+
 const applicationNotesInput = document.getElementById(
     "application-notes"
+);
+
+const applicationSearchInput = document.getElementById(
+    "application-search"
+);
+
+const statusFilterInput = document.getElementById("status-filter");
+
+const sortApplicationsInput = document.getElementById(
+    "sort-applications"
+);
+
+const applicationsResultsMessage = document.getElementById(
+    "applications-results-message"
 );
 
 const applicationsList = document.getElementById("applications-list");
@@ -57,6 +77,7 @@ const totalApplicationsCount = document.getElementById(
 
 const interviewsCount = document.getElementById("interviews-count");
 const offersCount = document.getElementById("offers-count");
+
 const responseRateCount = document.getElementById(
     "response-rate-count"
 );
@@ -71,7 +92,7 @@ let applications = loadApplications();
 let editingApplicationId = null;
 
 /**
- * Load saved applications from browser storage.
+ * Load applications from browser storage.
  */
 function loadApplications() {
     const savedApplications = localStorage.getItem(storageKey);
@@ -94,10 +115,24 @@ function loadApplications() {
 }
 
 /**
- * Save the current applications array in browser storage.
+ * Save applications in browser storage.
  */
 function saveApplications() {
     localStorage.setItem(storageKey, JSON.stringify(applications));
+}
+
+/**
+ * Create a unique ID for a new application.
+ */
+function createApplicationId() {
+    if (
+        typeof crypto !== "undefined"
+        && typeof crypto.randomUUID === "function"
+    ) {
+        return crypto.randomUUID();
+    }
+
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 /* ---------------------------------
@@ -150,7 +185,7 @@ function resetApplicationForm() {
 }
 
 /**
- * Display the modal.
+ * Display the application modal.
  */
 function showApplicationModal() {
     applicationModal.hidden = false;
@@ -159,7 +194,7 @@ function showApplicationModal() {
 }
 
 /**
- * Open an empty form for a new application.
+ * Open a blank form for a new application.
  */
 function openNewApplicationForm() {
     resetApplicationForm();
@@ -185,22 +220,22 @@ function openEditApplicationForm(applicationId) {
     applicationFormTitle.textContent = "Edit Application";
     submitApplicationButton.textContent = "Update Application";
 
-    companyNameInput.value = applicationToEdit.companyName;
-    positionTitleInput.value = applicationToEdit.positionTitle;
-    jobLocationInput.value = applicationToEdit.location;
-    applicationStatusInput.value = applicationToEdit.status;
-    applicationDateInput.value = applicationToEdit.applicationDate;
-    salaryInformationInput.value = applicationToEdit.salary;
-    jobLinkInput.value = applicationToEdit.jobLink;
-    interviewDateInput.value = applicationToEdit.interviewDate;
-    followUpDateInput.value = applicationToEdit.followUpDate;
-    applicationNotesInput.value = applicationToEdit.notes;
+    companyNameInput.value = applicationToEdit.companyName || "";
+    positionTitleInput.value = applicationToEdit.positionTitle || "";
+    jobLocationInput.value = applicationToEdit.location || "";
+    applicationStatusInput.value = applicationToEdit.status || "";
+    applicationDateInput.value = applicationToEdit.applicationDate || "";
+    salaryInformationInput.value = applicationToEdit.salary || "";
+    jobLinkInput.value = applicationToEdit.jobLink || "";
+    interviewDateInput.value = applicationToEdit.interviewDate || "";
+    followUpDateInput.value = applicationToEdit.followUpDate || "";
+    applicationNotesInput.value = applicationToEdit.notes || "";
 
     showApplicationModal();
 }
 
 /**
- * Close the application form.
+ * Close the application modal.
  */
 function closeApplicationForm() {
     applicationModal.hidden = true;
@@ -242,7 +277,7 @@ document.addEventListener("keydown", function (event) {
 --------------------------------- */
 
 /**
- * Update the dashboard using the saved applications.
+ * Update dashboard statistics using all applications.
  */
 function updateDashboard() {
     const totalApplications = applications.length;
@@ -285,6 +320,128 @@ function updateDashboard() {
 }
 
 /* ---------------------------------
+   Search, filtering, and sorting
+--------------------------------- */
+
+/**
+ * Return applications matching the current search and status filter.
+ */
+function getFilteredApplications() {
+    const searchTerm = applicationSearchInput.value
+        .trim()
+        .toLowerCase();
+
+    const selectedStatus = statusFilterInput.value;
+
+    return applications.filter(function (application) {
+        const searchableInformation = [
+            application.companyName,
+            application.positionTitle,
+            application.location,
+            application.status,
+            application.notes
+        ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+        const matchesSearch = searchableInformation.includes(
+            searchTerm
+        );
+
+        const matchesStatus = selectedStatus === "All"
+            || application.status === selectedStatus;
+
+        return matchesSearch && matchesStatus;
+    });
+}
+
+/**
+ * Sort a copied application array using the selected option.
+ */
+function sortApplicationResults(applicationResults) {
+    const selectedSort = sortApplicationsInput.value;
+    const sortedApplications = [...applicationResults];
+
+    sortedApplications.sort(function (firstApplication, secondApplication) {
+        if (selectedSort === "oldest") {
+            return (
+                firstApplication.applicationDate || ""
+            ).localeCompare(
+                secondApplication.applicationDate || ""
+            );
+        }
+
+        if (selectedSort === "company-ascending") {
+            return (
+                firstApplication.companyName || ""
+            ).localeCompare(
+                secondApplication.companyName || "",
+                undefined,
+                { sensitivity: "base" }
+            );
+        }
+
+        if (selectedSort === "company-descending") {
+            return (
+                secondApplication.companyName || ""
+            ).localeCompare(
+                firstApplication.companyName || "",
+                undefined,
+                { sensitivity: "base" }
+            );
+        }
+
+        if (selectedSort === "position-ascending") {
+            return (
+                firstApplication.positionTitle || ""
+            ).localeCompare(
+                secondApplication.positionTitle || "",
+                undefined,
+                { sensitivity: "base" }
+            );
+        }
+
+        return (
+            secondApplication.applicationDate || ""
+        ).localeCompare(
+            firstApplication.applicationDate || ""
+        );
+    });
+
+    return sortedApplications;
+}
+
+/**
+ * Return the filtered and sorted applications.
+ */
+function getVisibleApplications() {
+    const filteredApplications = getFilteredApplications();
+
+    return sortApplicationResults(filteredApplications);
+}
+
+/**
+ * Update the text showing how many applications are visible.
+ */
+function updateResultsMessage(visibleCount) {
+    if (applications.length === 0) {
+        applicationsResultsMessage.textContent = "";
+        return;
+    }
+
+    if (visibleCount === applications.length) {
+        applicationsResultsMessage.textContent =
+            `Showing all ${applications.length} applications.`;
+
+        return;
+    }
+
+    applicationsResultsMessage.textContent =
+        `Showing ${visibleCount} of ${applications.length} applications.`;
+}
+
+/* ---------------------------------
    Delete functionality
 --------------------------------- */
 
@@ -321,11 +478,11 @@ function deleteApplication(applicationId) {
 }
 
 /* ---------------------------------
-   Application list
+   Application cards
 --------------------------------- */
 
 /**
- * Create and return one application list item.
+ * Create and return one application card.
  */
 function createApplicationListItem(application) {
     const listItem = document.createElement("li");
@@ -374,6 +531,16 @@ function createApplicationListItem(application) {
         followUpDate
     );
 
+    if (application.interviewDate) {
+        const interviewDate = document.createElement("p");
+
+        interviewDate.textContent = `Interview: ${formatDate(
+            application.interviewDate
+        )}`;
+
+        details.append(interviewDate);
+    }
+
     if (application.jobLink) {
         const jobLink = document.createElement("a");
 
@@ -420,17 +587,29 @@ function createApplicationListItem(application) {
 }
 
 /**
- * Display all saved applications.
+ * Display applications using the current controls.
  */
 function renderApplications() {
     applicationsList.innerHTML = "";
 
+    const visibleApplications = getVisibleApplications();
+
     emptyApplicationsMessage.hidden = applications.length !== 0;
 
-    applications.forEach(function (application) {
+    visibleApplications.forEach(function (application) {
         const listItem = createApplicationListItem(application);
         applicationsList.append(listItem);
     });
+
+    if (
+        applications.length > 0
+        && visibleApplications.length === 0
+    ) {
+        applicationsResultsMessage.textContent =
+            "No applications match your current search or filter.";
+    } else {
+        updateResultsMessage(visibleApplications.length);
+    }
 
     updateDashboard();
 }
@@ -471,7 +650,7 @@ applicationForm.addEventListener("submit", function (event) {
         });
     } else {
         const newApplication = {
-            id: crypto.randomUUID(),
+            id: createApplicationId(),
             ...applicationInformation,
             createdAt: new Date().toISOString(),
             updatedAt: null
@@ -484,6 +663,25 @@ applicationForm.addEventListener("submit", function (event) {
     renderApplications();
     closeApplicationForm();
 });
+
+/* ---------------------------------
+   Control event listeners
+--------------------------------- */
+
+applicationSearchInput.addEventListener(
+    "input",
+    renderApplications
+);
+
+statusFilterInput.addEventListener(
+    "change",
+    renderApplications
+);
+
+sortApplicationsInput.addEventListener(
+    "change",
+    renderApplications
+);
 
 /* ---------------------------------
    Initial page display

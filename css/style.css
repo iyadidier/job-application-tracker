@@ -552,3 +552,84 @@ body.modal-open {
     background-color: var(--primary-color);
     color: #ffffff;
 }
+/* ------------------------------
+   Search, filter, and sort controls
+------------------------------ */
+
+#application-controls {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding: 20px;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+#application-controls > div {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+#application-controls label {
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+#application-controls input,
+#application-controls select {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 13px;
+    background-color: var(--surface-color);
+    color: var(--text-color);
+    font: inherit;
+    outline: none;
+}
+
+#application-controls input:focus,
+#application-controls select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+#application-search::placeholder {
+    color: var(--secondary-text);
+}
+
+#applications-results-message {
+    min-height: 24px;
+    margin-bottom: 14px;
+    color: var(--secondary-text);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* ------------------------------
+   Control responsiveness
+------------------------------ */
+
+@media (max-width: 800px) {
+    #application-controls {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #application-controls > div:first-child {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 550px) {
+    #application-controls {
+        grid-template-columns: 1fr;
+        padding: 16px;
+    }
+
+    #application-controls > div:first-child {
+        grid-column: auto;
+    }
+}
