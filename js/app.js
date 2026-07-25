@@ -15,6 +15,9 @@ function getElement(id) {
 
     return element;
 }
+const notificationContainer = getElement(
+    "notification-container"
+);
 
 /* ---------------------------------
    Authentication elements
@@ -175,6 +178,62 @@ function setBodyModalState() {
         !authenticationModal.hidden || !applicationModal.hidden;
 
     document.body.classList.toggle("modal-open", modalIsOpen);
+}
+function showNotification(
+    message,
+    type = "info",
+    duration = 3500
+) {
+    const notification = document.createElement("div");
+    const messageElement = document.createElement("p");
+    const closeButton = document.createElement("button");
+
+    notification.classList.add(
+        "notification",
+        `notification-${type}`
+    );
+
+    notification.setAttribute(
+        "role",
+        type === "error" ? "alert" : "status"
+    );
+
+    messageElement.classList.add("notification-message");
+    messageElement.textContent = message;
+
+    closeButton.classList.add("notification-close");
+    closeButton.type = "button";
+    closeButton.setAttribute("aria-label", "Close notification");
+    closeButton.textContent = "×";
+
+    notification.append(messageElement, closeButton);
+    notificationContainer.append(notification);
+
+    function removeNotification() {
+        notification.classList.remove(
+            "notification-visible"
+        );
+
+        window.setTimeout(function () {
+            notification.remove();
+        }, 200);
+    }
+
+    const timeoutId = window.setTimeout(
+        removeNotification,
+        duration
+    );
+
+    closeButton.addEventListener("click", function () {
+        window.clearTimeout(timeoutId);
+        removeNotification();
+    });
+
+    window.requestAnimationFrame(function () {
+        notification.classList.add(
+            "notification-visible"
+        );
+    });
 }
 
 /* ---------------------------------
@@ -449,7 +508,11 @@ authenticationForm.addEventListener(
                 }
 
                 closeAuthenticationModal();
-            }
+
+                showNotification(
+                    "Signed in successfully.",
+                    "success"
+                );            }
         } catch (error) {
             console.error("Authentication error:", error);
             setAuthenticationMessage(
@@ -485,10 +548,18 @@ signOutButton.addEventListener("click", async function () {
         if (error) {
             throw error;
         }
+
+        showNotification(
+            "Signed out successfully.",
+            "success"
+        );
     } catch (error) {
         console.error("Sign-out error:", error);
-        window.alert(
-            error.message || "Sign out was unsuccessful."
+
+        showNotification(
+            error.message || "Sign out was unsuccessful.",
+            "error",
+            5000
         );
     } finally {
         signOutButton.disabled = false;
@@ -1087,15 +1158,24 @@ applicationForm.addEventListener(
 
             closeApplicationForm();
             renderApplications();
+
+            showNotification(
+                isEditing
+                    ? "Application updated successfully."
+                    : "Application saved successfully.",
+                "success"
+            );
         } catch (error) {
             console.error(
                 "Could not save application:",
                 error
             );
 
-            window.alert(
+            showNotification(
                 error.message
-                    || "The application could not be saved."
+                    || "The application could not be saved.",
+                "error",
+                5000
             );
         } finally {
             submitApplicationButton.disabled = false;
@@ -1147,15 +1227,21 @@ async function deleteApplication(applicationId) {
         );
 
         renderApplications();
-    } catch (error) {
+
+        showNotification(
+            "Application deleted successfully.",
+            "success"
+        );    } catch (error) {
         console.error(
             "Could not delete application:",
             error
         );
 
-        window.alert(
+        showNotification(
             error.message
-                || "The application could not be deleted."
+                || "The application could not be deleted.",
+            "error",
+            5000
         );
     }
 }
@@ -1175,8 +1261,9 @@ function escapeCsvValue(value) {
 
 function exportApplicationsToCsv() {
     if (applications.length === 0) {
-        window.alert(
-            "Add at least one job application before exporting."
+        showNotification(
+            "Add at least one job application before exporting.",
+            "error"
         );
 
         return;
@@ -1244,6 +1331,13 @@ function exportApplicationsToCsv() {
     downloadLink.remove();
 
     URL.revokeObjectURL(downloadUrl);
+
+    showNotification(
+        `${applications.length} application${
+            applications.length === 1 ? "" : "s"
+        } exported successfully.`,
+        "success"
+    );
 }
 
 exportApplicationsButton.addEventListener(
