@@ -901,3 +901,55 @@ body.modal-open {
         flex-direction: column;
     }
 }
+/* ------------------------------
+   Application status badges
+------------------------------ */
+
+#applications-list .application-status-badge {
+    border: 1px solid transparent;
+}
+
+#applications-list .status-interested {
+    background-color: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #475569 !important;
+}
+
+#applications-list .status-applied {
+    background-color: #dbeafe !important;
+    border-color: #93c5fd !important;
+    color: #1d4ed8 !important;
+}
+
+#applications-list .status-assessment {
+    background-color: #f3e8ff !important;
+    border-color: #d8b4fe !important;
+    color: #7e22ce !important;
+}
+
+#applications-list .status-interview {
+    background-color: #ffedd5 !important;
+    border-color: #fdba74 !important;
+    color: #c2410c !important;
+}
+
+#applications-list .status-offer {
+    background-color: #dcfce7 !important;
+    border-color: #86efac !important;
+    color: #15803d !important;
+}
+
+#applications-list .status-rejected {
+    background-color: #fee2e2 !important;
+    border-color: #fca5a5 !important;
+    color: #b91c1c !important;
+}
+
+#applications-list .status-withdrawn {
+    background-color: #e5e7eb !important;
+    border-color: #9ca3af !important;
+    color: #374151 !important;
+}
+[hidden] {
+    display: none !important;
+}

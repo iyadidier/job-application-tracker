@@ -1,17 +1,19 @@
 "use strict";
 
 /* ---------------------------------
-   Supabase client
+   Supabase client and helpers
 --------------------------------- */
 
 const supabaseClient = window.supabaseClient;
 
-/* ---------------------------------
-   Helper
---------------------------------- */
-
 function getElement(id) {
-    return document.getElementById(id);
+    const element = document.getElementById(id);
+
+    if (!element) {
+        throw new Error(`Missing required element: #${id}`);
+    }
+
+    return element;
 }
 
 /* ---------------------------------
@@ -20,8 +22,8 @@ function getElement(id) {
 
 const guestNavigation = getElement("guest-navigation");
 const userNavigation = getElement("user-navigation");
+const guestHero = getElement("guest-hero");
 const signedInUserEmail = getElement("signed-in-user-email");
-
 const openSignInButton = getElement("open-sign-in-button");
 const openCreateAccountButton = getElement(
     "open-create-account-button"
@@ -49,9 +51,7 @@ const confirmPasswordField = getElement(
 const authenticationConfirmPasswordInput = getElement(
     "authentication-confirm-password"
 );
-const authenticationMessage = getElement(
-    "authentication-message"
-);
+const authenticationMessage = getElement("authentication-message");
 const authenticationSubmitButton = getElement(
     "authentication-submit-button"
 );
@@ -63,7 +63,7 @@ const switchAuthenticationModeButton = getElement(
 );
 
 /* ---------------------------------
-   Job application elements
+   Application elements
 --------------------------------- */
 
 const applicationModal = getElement("application-modal");
@@ -71,7 +71,6 @@ const applicationForm = getElement("application-form");
 const applicationFormTitle = getElement(
     "application-form-title"
 );
-
 const openApplicationFormButton = getElement(
     "open-application-form"
 );
@@ -84,38 +83,28 @@ const closeApplicationFormButton = getElement(
 const cancelApplicationFormButton = getElement(
     "cancel-application-form"
 );
-
 const submitApplicationButton = applicationForm.querySelector(
     'button[type="submit"]'
 );
 
+if (!submitApplicationButton) {
+    throw new Error("The application submit button is missing.");
+}
+
 const companyNameInput = getElement("company-name");
 const positionTitleInput = getElement("position-title");
 const jobLocationInput = getElement("job-location");
-const applicationStatusInput = getElement(
-    "application-status"
-);
-const applicationDateInput = getElement(
-    "application-date"
-);
-const salaryInformationInput = getElement(
-    "salary-information"
-);
+const applicationStatusInput = getElement("application-status");
+const applicationDateInput = getElement("application-date");
+const salaryInformationInput = getElement("salary-information");
 const jobLinkInput = getElement("job-link");
 const interviewDateInput = getElement("interview-date");
 const followUpDateInput = getElement("follow-up-date");
-const applicationNotesInput = getElement(
-    "application-notes"
-);
+const applicationNotesInput = getElement("application-notes");
 
-const applicationSearchInput = getElement(
-    "application-search"
-);
+const applicationSearchInput = getElement("application-search");
 const statusFilterInput = getElement("status-filter");
-const sortApplicationsInput = getElement(
-    "sort-applications"
-);
-
+const sortApplicationsInput = getElement("sort-applications");
 const applicationsResultsMessage = getElement(
     "applications-results-message"
 );
@@ -129,9 +118,7 @@ const totalApplicationsCount = getElement(
 );
 const interviewsCount = getElement("interviews-count");
 const offersCount = getElement("offers-count");
-const responseRateCount = getElement(
-    "response-rate-count"
-);
+const responseRateCount = getElement("response-rate-count");
 
 /* ---------------------------------
    Application state
@@ -143,29 +130,68 @@ let editingApplicationId = null;
 let authenticationMode = "sign-in";
 let isLoadingApplications = false;
 let databaseErrorMessage = "";
+let loadedUserId = null;
+
+/* ---------------------------------
+   General helpers
+--------------------------------- */
+
+function getTodayDate() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+}
+
+function formatDate(dateValue) {
+    if (!dateValue) {
+        return "Not provided";
+    }
+
+    const date = new Date(`${dateValue}T00:00:00`);
+
+    return date.toLocaleDateString("en-CA", {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+    });
+}
+
+function getStatusClassName(status) {
+    return String(status || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+}
+
+function setBodyModalState() {
+    const modalIsOpen =
+        !authenticationModal.hidden || !applicationModal.hidden;
+
+    document.body.classList.toggle("modal-open", modalIsOpen);
+}
 
 /* ---------------------------------
    Authentication interface
 --------------------------------- */
 
-function setAuthenticationMessage(
-    message,
-    messageType = ""
-) {
+function setAuthenticationMessage(message, type = "") {
     authenticationMessage.textContent = message;
-
     authenticationMessage.classList.remove(
         "authentication-error",
         "authentication-success"
     );
 
-    if (messageType === "error") {
+    if (type === "error") {
         authenticationMessage.classList.add(
             "authentication-error"
         );
     }
 
-    if (messageType === "success") {
+    if (type === "success") {
         authenticationMessage.classList.add(
             "authentication-success"
         );
@@ -177,97 +203,70 @@ function setAuthenticationMode(mode) {
     authenticationForm.reset();
     setAuthenticationMessage("");
 
-    if (mode === "create-account") {
-        authenticationTitle.textContent = "Create Account";
+    const creatingAccount = mode === "create-account";
 
-        authenticationDescription.textContent =
-            "Create an account to securely manage your job applications.";
+    authenticationTitle.textContent = creatingAccount
+        ? "Create Account"
+        : "Sign In";
 
-        authenticationSubmitButton.textContent =
-            "Create Account";
+    authenticationDescription.textContent = creatingAccount
+        ? "Create an account to securely manage your job applications."
+        : "Sign in to access your saved job applications.";
 
-        authenticationSwitchText.textContent =
-            "Already have an account?";
+    authenticationSubmitButton.textContent = creatingAccount
+        ? "Create Account"
+        : "Sign In";
 
-        switchAuthenticationModeButton.textContent =
-            "Sign In";
+    authenticationSwitchText.textContent = creatingAccount
+        ? "Already have an account?"
+        : "Do not have an account?";
 
-        confirmPasswordField.hidden = false;
-        authenticationConfirmPasswordInput.required = true;
+    switchAuthenticationModeButton.textContent = creatingAccount
+        ? "Sign In"
+        : "Create Account";
 
-        authenticationPasswordInput.autocomplete =
-            "new-password";
-
-        return;
-    }
-
-    authenticationTitle.textContent = "Sign In";
-
-    authenticationDescription.textContent =
-        "Sign in to access your saved job applications.";
-
-    authenticationSubmitButton.textContent = "Sign In";
-
-    authenticationSwitchText.textContent =
-        "Do not have an account?";
-
-    switchAuthenticationModeButton.textContent =
-        "Create Account";
-
-    confirmPasswordField.hidden = true;
-    authenticationConfirmPasswordInput.required = false;
-
-    authenticationPasswordInput.autocomplete =
-        "current-password";
+    confirmPasswordField.hidden = !creatingAccount;
+    authenticationConfirmPasswordInput.required = creatingAccount;
+    authenticationPasswordInput.autocomplete = creatingAccount
+        ? "new-password"
+        : "current-password";
 }
 
-function openAuthenticationModal(mode) {
+function openAuthenticationModal(mode = "sign-in") {
     setAuthenticationMode(mode);
-
     authenticationModal.hidden = false;
-    document.body.classList.add("modal-open");
-
+    setBodyModalState();
     authenticationEmailInput.focus();
 }
 
 function closeAuthenticationModal() {
     authenticationModal.hidden = true;
-    document.body.classList.remove("modal-open");
-
     authenticationForm.reset();
+    setAuthenticationMessage("");
     setAuthenticationMode("sign-in");
+    setBodyModalState();
 }
 
 function updateAuthenticationNavigation(user) {
-    if (user) {
-        guestNavigation.hidden = true;
-        userNavigation.hidden = false;
+    const signedIn = Boolean(user);
 
-        signedInUserEmail.textContent =
-            user.email || "Signed-in user";
-
-        return;
-    }
-
-    guestNavigation.hidden = false;
-    userNavigation.hidden = true;
-    signedInUserEmail.textContent = "";
+    guestNavigation.hidden = signedIn;
+    userNavigation.hidden = !signedIn;
+    guestHero.hidden = signedIn;
+    signedInUserEmail.textContent = user?.email || "";
 }
 
 /* ---------------------------------
-   Authentication events
+   Authentication actions
 --------------------------------- */
 
 openSignInButton.addEventListener("click", function () {
     openAuthenticationModal("sign-in");
 });
 
-openCreateAccountButton.addEventListener(
-    "click",
-    function () {
-        openAuthenticationModal("create-account");
-    }
-);
+openCreateAccountButton.addEventListener("click", function () {
+    openAuthenticationModal("create-account");
+});
 
 closeAuthenticationButton.addEventListener(
     "click",
@@ -277,28 +276,20 @@ closeAuthenticationButton.addEventListener(
 switchAuthenticationModeButton.addEventListener(
     "click",
     function () {
-        const nextMode =
-            authenticationMode === "sign-in"
-                ? "create-account"
-                : "sign-in";
+        const nextMode = authenticationMode === "sign-in"
+            ? "create-account"
+            : "sign-in";
 
         setAuthenticationMode(nextMode);
         authenticationEmailInput.focus();
     }
 );
 
-authenticationModal.addEventListener(
-    "click",
-    function (event) {
-        if (event.target === authenticationModal) {
-            closeAuthenticationModal();
-        }
+authenticationModal.addEventListener("click", function (event) {
+    if (event.target === authenticationModal) {
+        closeAuthenticationModal();
     }
-);
-
-/* ---------------------------------
-   Authentication submission
---------------------------------- */
+});
 
 authenticationForm.addEventListener(
     "submit",
@@ -310,51 +301,41 @@ authenticationForm.addEventListener(
                 "The Supabase connection is unavailable.",
                 "error"
             );
-
             return;
         }
 
         const email = authenticationEmailInput.value
             .trim()
             .toLowerCase();
-
-        const password =
-            authenticationPasswordInput.value;
-
+        const password = authenticationPasswordInput.value;
         const confirmPassword =
             authenticationConfirmPasswordInput.value;
+        const creatingAccount =
+            authenticationMode === "create-account";
 
-        if (
-            authenticationMode === "create-account"
-            && password !== confirmPassword
-        ) {
+        if (creatingAccount && password !== confirmPassword) {
             setAuthenticationMessage(
                 "The passwords do not match.",
                 "error"
             );
-
             authenticationConfirmPasswordInput.focus();
             return;
         }
 
         authenticationSubmitButton.disabled = true;
-
-        authenticationSubmitButton.textContent =
-            authenticationMode === "create-account"
-                ? "Creating Account..."
-                : "Signing In...";
-
+        authenticationSubmitButton.textContent = creatingAccount
+            ? "Creating Account..."
+            : "Signing In...";
         setAuthenticationMessage("");
 
         try {
-            if (authenticationMode === "create-account") {
+            if (creatingAccount) {
                 const { data, error } =
                     await supabaseClient.auth.signUp({
                         email,
                         password,
                         options: {
-                            emailRedirectTo:
-                                window.location.origin
+                            emailRedirectTo: window.location.origin
                         }
                     });
 
@@ -369,18 +350,15 @@ authenticationForm.addEventListener(
                         "Account created. Check your email and click the confirmation link before signing in.",
                         "success"
                     );
-
                     authenticationPasswordInput.value = "";
-                    authenticationConfirmPasswordInput.value =
-                        "";
+                    authenticationConfirmPasswordInput.value = "";
                 }
             } else {
                 const { error } =
-                    await supabaseClient.auth
-                        .signInWithPassword({
-                            email,
-                            password
-                        });
+                    await supabaseClient.auth.signInWithPassword({
+                        email,
+                        password
+                    });
 
                 if (error) {
                     throw error;
@@ -390,10 +368,8 @@ authenticationForm.addEventListener(
             }
         } catch (error) {
             console.error("Authentication error:", error);
-
             setAuthenticationMessage(
-                error.message ||
-                    "Authentication was unsuccessful.",
+                error.message || "Authentication was unsuccessful.",
                 "error"
             );
         } finally {
@@ -409,41 +385,35 @@ authenticationForm.addEventListener(
     }
 );
 
-/* ---------------------------------
-   Sign out
---------------------------------- */
+signOutButton.addEventListener("click", async function () {
+    if (!supabaseClient) {
+        return;
+    }
 
-signOutButton.addEventListener(
-    "click",
-    async function () {
-        if (!supabaseClient) {
-            return;
-        }
+    signOutButton.disabled = true;
+    signOutButton.textContent = "Signing Out...";
 
-        signOutButton.disabled = true;
-        signOutButton.textContent = "Signing Out...";
-
-        const { error } =
-            await supabaseClient.auth.signOut({
-                scope: "local"
-            });
+    try {
+        const { error } = await supabaseClient.auth.signOut({
+            scope: "local"
+        });
 
         if (error) {
-            console.error("Sign-out error:", error);
-
-            window.alert(
-                error.message ||
-                    "Sign out was unsuccessful."
-            );
+            throw error;
         }
-
+    } catch (error) {
+        console.error("Sign-out error:", error);
+        window.alert(
+            error.message || "Sign out was unsuccessful."
+        );
+    } finally {
         signOutButton.disabled = false;
         signOutButton.textContent = "Sign Out";
     }
-);
+});
 
 /* ---------------------------------
-   Database row conversion
+   Database conversion helpers
 --------------------------------- */
 
 function convertDatabaseRow(row) {
@@ -466,68 +436,42 @@ function convertDatabaseRow(row) {
 }
 
 function createDatabasePayload(formData) {
-    const location = formData
-        .get("jobLocation")
-        .trim();
+    const optionalText = function (fieldName) {
+        const value = String(formData.get(fieldName) || "").trim();
+        return value || null;
+    };
 
-    const salary = formData
-        .get("salaryInformation")
-        .trim();
-
-    const jobLink = formData
-        .get("jobLink")
-        .trim();
-
-    const interviewDate = formData.get(
-        "interviewDate"
-    );
-
-    const followUpDate = formData.get(
-        "followUpDate"
-    );
-
-    const notes = formData
-        .get("applicationNotes")
-        .trim();
+    const optionalDate = function (fieldName) {
+        const value = String(formData.get(fieldName) || "");
+        return value || null;
+    };
 
     return {
-        company_name: formData
-            .get("companyName")
-            .trim(),
-
-        position_title: formData
-            .get("positionTitle")
-            .trim(),
-
-        job_location: location || null,
-
-        status: formData.get(
-            "applicationStatus"
-        ),
-
-        application_date: formData.get(
-            "applicationDate"
-        ),
-
-        salary_information: salary || null,
-
-        job_posting_url: jobLink || null,
-
-        interview_date: interviewDate || null,
-
-        follow_up_date: followUpDate || null,
-
-        notes: notes || null
+        company_name: String(
+            formData.get("companyName") || ""
+        ).trim(),
+        position_title: String(
+            formData.get("positionTitle") || ""
+        ).trim(),
+        job_location: optionalText("jobLocation"),
+        status: formData.get("applicationStatus"),
+        application_date: formData.get("applicationDate"),
+        salary_information: optionalText("salaryInformation"),
+        job_posting_url: optionalText("jobLink"),
+        interview_date: optionalDate("interviewDate"),
+        follow_up_date: optionalDate("followUpDate"),
+        notes: optionalText("applicationNotes")
     };
 }
 
 /* ---------------------------------
-   Database loading
+   Database loading and auth state
 --------------------------------- */
 
 async function loadApplicationsFromDatabase() {
     if (!currentUser) {
         applications = [];
+        loadedUserId = null;
         renderApplications();
         return;
     }
@@ -541,144 +485,84 @@ async function loadApplicationsFromDatabase() {
             .from("job_applications")
             .select("*")
             .eq("user_id", currentUser.id)
-            .order("application_date", {
-                ascending: false
-            })
-            .order("created_at", {
-                ascending: false
-            });
+            .order("application_date", { ascending: false })
+            .order("created_at", { ascending: false });
 
         if (error) {
             throw error;
         }
 
-        applications = (data || []).map(
-            convertDatabaseRow
-        );
+        applications = (data || []).map(convertDatabaseRow);
+        loadedUserId = currentUser.id;
     } catch (error) {
-        console.error(
-            "Could not load applications:",
-            error
-        );
-
+        console.error("Could not load applications:", error);
         applications = [];
-
         databaseErrorMessage =
-            error.message ||
-            "Your applications could not be loaded.";
+            error.message || "Your applications could not be loaded.";
     } finally {
         isLoadingApplications = false;
         renderApplications();
     }
 }
 
-/* ---------------------------------
-   Authentication state changes
---------------------------------- */
+async function applyAuthenticationSession(session) {
+    const nextUser = session?.user || null;
+    const nextUserId = nextUser?.id || null;
 
-async function handleAuthenticationChange(
-    event,
-    session
-) {
-    const previousUserId = currentUser?.id || null;
-
-    currentUser = session?.user || null;
-
+    currentUser = nextUser;
     updateAuthenticationNavigation(currentUser);
 
     if (!currentUser) {
         applications = [];
+        loadedUserId = null;
         editingApplicationId = null;
         databaseErrorMessage = "";
-
         applicationSearchInput.value = "";
         statusFilterInput.value = "All";
         sortApplicationsInput.value = "newest";
 
         if (!applicationModal.hidden) {
             applicationModal.hidden = true;
-            document.body.classList.remove("modal-open");
+            setBodyModalState();
         }
 
         renderApplications();
         return;
     }
 
-    if (
-        !authenticationModal.hidden
-        && (
-            event === "SIGNED_IN"
-            || event === "INITIAL_SESSION"
-        )
-    ) {
+    if (!authenticationModal.hidden) {
         closeAuthenticationModal();
     }
 
-    const userChanged =
-        previousUserId !== currentUser.id;
-
-    if (
-        userChanged
-        || event === "INITIAL_SESSION"
-    ) {
+    if (loadedUserId !== nextUserId) {
         await loadApplicationsFromDatabase();
+    } else {
+        renderApplications();
     }
 }
 
-if (supabaseClient) {
-    /*
-     * The callback itself stays synchronous.
-     * The asynchronous work runs in a separate function.
-     */
-    supabaseClient.auth.onAuthStateChange(
-        function (event, session) {
-            void handleAuthenticationChange(
-                event,
-                session
-            );
+function initializeAuthentication() {
+    if (!supabaseClient) {
+        updateAuthenticationNavigation(null);
+        console.error("Supabase client was not found.");
+        renderApplications();
+        return;
+    }
+
+    supabaseClient.auth.onAuthStateChange(function (_event, session) {
+        window.setTimeout(function () {
+            void applyAuthenticationSession(session);
+        }, 0);
+    });
+
+    void supabaseClient.auth.getSession().then(function ({ data, error }) {
+        if (error) {
+            console.error("Could not read the session:", error);
+            void applyAuthenticationSession(null);
+            return;
         }
-    );
-} else {
-    updateAuthenticationNavigation(null);
 
-    console.error(
-        "Supabase client was not found."
-    );
-}
-
-/* ---------------------------------
-   Date helpers
---------------------------------- */
-
-function getTodayDate() {
-    const today = new Date();
-
-    const year = today.getFullYear();
-
-    const month = String(
-        today.getMonth() + 1
-    ).padStart(2, "0");
-
-    const day = String(
-        today.getDate()
-    ).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-}
-
-function formatDate(dateValue) {
-    if (!dateValue) {
-        return "Not provided";
-    }
-
-    const date = new Date(
-        `${dateValue}T00:00:00`
-    );
-
-    return date.toLocaleDateString("en-CA", {
-        year: "numeric",
-        month: "short",
-        day: "numeric"
+        void applyAuthenticationSession(data.session);
     });
 }
 
@@ -688,15 +572,9 @@ function formatDate(dateValue) {
 
 function resetApplicationForm() {
     applicationForm.reset();
-
     editingApplicationId = null;
-
-    applicationFormTitle.textContent =
-        "Add a New Application";
-
-    submitApplicationButton.textContent =
-        "Save Application";
-
+    applicationFormTitle.textContent = "Add a New Application";
+    submitApplicationButton.textContent = "Save Application";
     applicationDateInput.value = getTodayDate();
 }
 
@@ -707,8 +585,7 @@ function showApplicationModal() {
     }
 
     applicationModal.hidden = false;
-    document.body.classList.add("modal-open");
-
+    setBodyModalState();
     companyNameInput.focus();
 }
 
@@ -718,66 +595,36 @@ function openNewApplicationForm() {
 }
 
 function openEditApplicationForm(applicationId) {
-    if (!currentUser) {
-        return;
-    }
-
-    const applicationToEdit = applications.find(
-        function (application) {
-            return application.id === applicationId;
-        }
+    const application = applications.find(
+        (item) => item.id === applicationId
     );
 
-    if (!applicationToEdit) {
+    if (!currentUser || !application) {
         return;
     }
 
     editingApplicationId = applicationId;
+    applicationFormTitle.textContent = "Edit Application";
+    submitApplicationButton.textContent = "Update Application";
 
-    applicationFormTitle.textContent =
-        "Edit Application";
-
-    submitApplicationButton.textContent =
-        "Update Application";
-
-    companyNameInput.value =
-        applicationToEdit.companyName || "";
-
-    positionTitleInput.value =
-        applicationToEdit.positionTitle || "";
-
-    jobLocationInput.value =
-        applicationToEdit.location || "";
-
-    applicationStatusInput.value =
-        applicationToEdit.status || "";
-
-    applicationDateInput.value =
-        applicationToEdit.applicationDate || "";
-
-    salaryInformationInput.value =
-        applicationToEdit.salary || "";
-
-    jobLinkInput.value =
-        applicationToEdit.jobLink || "";
-
-    interviewDateInput.value =
-        applicationToEdit.interviewDate || "";
-
-    followUpDateInput.value =
-        applicationToEdit.followUpDate || "";
-
-    applicationNotesInput.value =
-        applicationToEdit.notes || "";
+    companyNameInput.value = application.companyName;
+    positionTitleInput.value = application.positionTitle;
+    jobLocationInput.value = application.location;
+    applicationStatusInput.value = application.status;
+    applicationDateInput.value = application.applicationDate;
+    salaryInformationInput.value = application.salary;
+    jobLinkInput.value = application.jobLink;
+    interviewDateInput.value = application.interviewDate;
+    followUpDateInput.value = application.followUpDate;
+    applicationNotesInput.value = application.notes;
 
     showApplicationModal();
 }
 
 function closeApplicationForm() {
     applicationModal.hidden = true;
-    document.body.classList.remove("modal-open");
-
     resetApplicationForm();
+    setBodyModalState();
 
     if (!openApplicationFormButton.disabled) {
         openApplicationFormButton.focus();
@@ -799,262 +646,135 @@ cancelApplicationFormButton.addEventListener(
     closeApplicationForm
 );
 
-applicationModal.addEventListener(
-    "click",
-    function (event) {
-        if (event.target === applicationModal) {
-            closeApplicationForm();
-        }
+applicationModal.addEventListener("click", function (event) {
+    if (event.target === applicationModal) {
+        closeApplicationForm();
     }
-);
+});
+
+document.addEventListener("keydown", function (event) {
+    if (event.key !== "Escape") {
+        return;
+    }
+
+    if (!authenticationModal.hidden) {
+        closeAuthenticationModal();
+        return;
+    }
+
+    if (!applicationModal.hidden) {
+        closeApplicationForm();
+    }
+});
 
 /* ---------------------------------
-   Escape key
---------------------------------- */
-
-document.addEventListener(
-    "keydown",
-    function (event) {
-        if (event.key !== "Escape") {
-            return;
-        }
-
-        if (!authenticationModal.hidden) {
-            closeAuthenticationModal();
-            return;
-        }
-
-        if (!applicationModal.hidden) {
-            closeApplicationForm();
-        }
-    }
-);
-
-/* ---------------------------------
-   Dashboard
+   Dashboard, filtering, and sorting
 --------------------------------- */
 
 function updateDashboard() {
-    const totalApplications = applications.length;
+    const total = applications.length;
 
-    const interviewApplications =
-        applications.filter(
-            function (application) {
-                return application.status === "Interview";
-            }
-        ).length;
+    const interviews = applications.filter(
+        (application) => application.status === "Interview"
+    ).length;
 
-    const offerApplications =
-        applications.filter(
-            function (application) {
-                return application.status === "Offer";
-            }
-        ).length;
+    const offers = applications.filter(
+        (application) => application.status === "Offer"
+    ).length;
 
-    const responseStatuses = [
+    const responseStatuses = new Set([
         "Assessment",
         "Interview",
         "Offer",
         "Rejected"
-    ];
+    ]);
 
-    const applicationsWithResponses =
-        applications.filter(
-            function (application) {
-                return responseStatuses.includes(
-                    application.status
-                );
-            }
-        ).length;
+    const responses = applications.filter((application) =>
+        responseStatuses.has(application.status)
+    ).length;
 
-    const responseRate =
-        totalApplications === 0
-            ? 0
-            : Math.round(
-                (
-                    applicationsWithResponses
-                    / totalApplications
-                ) * 100
-            );
+    const responseRate = total === 0
+        ? 0
+        : Math.round((responses / total) * 100);
 
-    totalApplicationsCount.textContent =
-        totalApplications;
-
-    interviewsCount.textContent =
-        interviewApplications;
-
-    offersCount.textContent =
-        offerApplications;
-
-    responseRateCount.textContent =
-        `${responseRate}%`;
+    totalApplicationsCount.textContent = total;
+    interviewsCount.textContent = interviews;
+    offersCount.textContent = offers;
+    responseRateCount.textContent = `${responseRate}%`;
 }
 
-/* ---------------------------------
-   Search, filter, and sort
---------------------------------- */
-
 function getFilteredApplications() {
-    const searchTerm =
-        applicationSearchInput.value
-            .trim()
+    const searchTerm = applicationSearchInput.value
+        .trim()
+        .toLowerCase();
+
+    const selectedStatus = statusFilterInput.value;
+
+    return applications.filter(function (application) {
+        const searchableText = [
+            application.companyName,
+            application.positionTitle,
+            application.location,
+            application.status,
+            application.notes
+        ]
+            .filter(Boolean)
+            .join(" ")
             .toLowerCase();
 
-    const selectedStatus =
-        statusFilterInput.value;
+        const matchesSearch = searchableText.includes(searchTerm);
 
-    return applications.filter(
-        function (application) {
-            const searchableInformation = [
-                application.companyName,
-                application.positionTitle,
-                application.location,
-                application.status,
-                application.notes
-            ]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
+        const matchesStatus = selectedStatus === "All"
+            || application.status === selectedStatus;
 
-            const matchesSearch =
-                searchableInformation.includes(
-                    searchTerm
-                );
-
-            const matchesStatus =
-                selectedStatus === "All"
-                || application.status === selectedStatus;
-
-            return matchesSearch && matchesStatus;
-        }
-    );
+        return matchesSearch && matchesStatus;
+    });
 }
 
 function sortApplicationResults(results) {
-    const selectedSort =
-        sortApplicationsInput.value;
+    const sortValue = sortApplicationsInput.value;
+    const sorted = [...results];
 
-    const sortedApplications = [...results];
-
-    sortedApplications.sort(
-        function (firstApplication, secondApplication) {
-            if (selectedSort === "oldest") {
-                return (
-                    firstApplication.applicationDate || ""
-                ).localeCompare(
-                    secondApplication.applicationDate || ""
+    sorted.sort(function (first, second) {
+        switch (sortValue) {
+            case "oldest":
+                return (first.applicationDate || "").localeCompare(
+                    second.applicationDate || ""
                 );
-            }
 
-            if (
-                selectedSort === "company-ascending"
-            ) {
-                return (
-                    firstApplication.companyName || ""
-                ).localeCompare(
-                    secondApplication.companyName || "",
+            case "company-ascending":
+                return (first.companyName || "").localeCompare(
+                    second.companyName || "",
                     undefined,
                     { sensitivity: "base" }
                 );
-            }
 
-            if (
-                selectedSort === "company-descending"
-            ) {
-                return (
-                    secondApplication.companyName || ""
-                ).localeCompare(
-                    firstApplication.companyName || "",
+            case "company-descending":
+                return (second.companyName || "").localeCompare(
+                    first.companyName || "",
                     undefined,
                     { sensitivity: "base" }
                 );
-            }
 
-            if (
-                selectedSort === "position-ascending"
-            ) {
-                return (
-                    firstApplication.positionTitle || ""
-                ).localeCompare(
-                    secondApplication.positionTitle || "",
+            case "position-ascending":
+                return (first.positionTitle || "").localeCompare(
+                    second.positionTitle || "",
                     undefined,
                     { sensitivity: "base" }
                 );
-            }
 
-            return (
-                secondApplication.applicationDate || ""
-            ).localeCompare(
-                firstApplication.applicationDate || ""
-            );
+            default:
+                return (second.applicationDate || "").localeCompare(
+                    first.applicationDate || ""
+                );
         }
-    );
+    });
 
-    return sortedApplications;
+    return sorted;
 }
 
 function getVisibleApplications() {
-    return sortApplicationResults(
-        getFilteredApplications()
-    );
-}
-
-/* ---------------------------------
-   Delete application
---------------------------------- */
-
-async function deleteApplication(applicationId) {
-    if (!currentUser) {
-        return;
-    }
-
-    const applicationToDelete = applications.find(
-        function (application) {
-            return application.id === applicationId;
-        }
-    );
-
-    if (!applicationToDelete) {
-        return;
-    }
-
-    const confirmed = window.confirm(
-        `Delete the ${applicationToDelete.positionTitle} application at ${applicationToDelete.companyName}?`
-    );
-
-    if (!confirmed) {
-        return;
-    }
-
-    try {
-        const { error } = await supabaseClient
-            .from("job_applications")
-            .delete()
-            .eq("id", applicationId)
-            .eq("user_id", currentUser.id);
-
-        if (error) {
-            throw error;
-        }
-
-        applications = applications.filter(
-            function (application) {
-                return application.id !== applicationId;
-            }
-        );
-
-        renderApplications();
-    } catch (error) {
-        console.error(
-            "Could not delete application:",
-            error
-        );
-
-        window.alert(
-            error.message ||
-                "The application could not be deleted."
-        );
-    }
+    return sortApplicationResults(getFilteredApplications());
 }
 
 /* ---------------------------------
@@ -1063,182 +783,96 @@ async function deleteApplication(applicationId) {
 
 function createApplicationListItem(application) {
     const listItem = document.createElement("li");
-
     const heading = document.createElement("div");
     const titleGroup = document.createElement("div");
+    const positionTitle = document.createElement("h3");
+    const companyName = document.createElement("p");
+    const status = document.createElement("span");
 
-    const positionTitle =
-        document.createElement("h3");
-
-    positionTitle.textContent =
-        application.positionTitle;
-
-    const companyName =
-        document.createElement("p");
-
-    companyName.textContent =
-        application.companyName;
-
-    const status =
-        document.createElement("span");
-
+    positionTitle.textContent = application.positionTitle;
+    companyName.textContent = application.companyName;
     status.textContent = application.status;
 
-    titleGroup.append(
-        positionTitle,
-        companyName
+    const statusClassName = getStatusClassName(application.status);
+
+    status.classList.add(
+        "application-status-badge",
+        `status-${statusClassName}`
     );
 
+    titleGroup.append(positionTitle, companyName);
     heading.append(titleGroup, status);
 
     const details = document.createElement("div");
 
-    const location = document.createElement("p");
-
-    location.textContent =
-        `Location: ${
-            application.location || "Not provided"
-        }`;
-
-    const applicationDate =
-        document.createElement("p");
-
-    applicationDate.textContent =
-        `Applied: ${formatDate(
-            application.applicationDate
-        )}`;
-
-    const salary = document.createElement("p");
-
-    salary.textContent =
-        `Salary: ${
-            application.salary || "Not provided"
-        }`;
-
-    const followUpDate =
-        document.createElement("p");
-
-    followUpDate.textContent =
-        `Follow-up: ${formatDate(
-            application.followUpDate
-        )}`;
-
-    details.append(
-        location,
-        applicationDate,
-        salary,
-        followUpDate
-    );
+    const detailValues = [
+        `Location: ${application.location || "Not provided"}`,
+        `Applied: ${formatDate(application.applicationDate)}`,
+        `Salary: ${application.salary || "Not provided"}`,
+        `Follow-up: ${formatDate(application.followUpDate)}`
+    ];
 
     if (application.interviewDate) {
-        const interviewDate =
-            document.createElement("p");
-
-        interviewDate.textContent =
-            `Interview: ${formatDate(
-                application.interviewDate
-            )}`;
-
-        details.append(interviewDate);
+        detailValues.push(
+            `Interview: ${formatDate(application.interviewDate)}`
+        );
     }
 
-    if (application.jobLink) {
-        const jobLink =
-            document.createElement("a");
+    detailValues.forEach(function (value) {
+        const paragraph = document.createElement("p");
+        paragraph.textContent = value;
+        details.append(paragraph);
+    });
 
+    if (application.jobLink) {
+        const jobLink = document.createElement("a");
         jobLink.href = application.jobLink;
         jobLink.target = "_blank";
         jobLink.rel = "noopener noreferrer";
         jobLink.textContent = "View job posting";
-
         details.append(jobLink);
     }
 
     if (application.notes) {
         const notes = document.createElement("p");
-
-        notes.textContent =
-            `Notes: ${application.notes}`;
-
+        notes.textContent = `Notes: ${application.notes}`;
         details.append(notes);
     }
 
     const actions = document.createElement("div");
+    actions.classList.add("application-actions");
 
-    actions.classList.add(
-        "application-actions"
-    );
-
-    const editButton =
-        document.createElement("button");
-
+    const editButton = document.createElement("button");
     editButton.type = "button";
-
-    editButton.classList.add(
-        "edit-application-button"
-    );
-
+    editButton.classList.add("edit-application-button");
     editButton.textContent = "Edit";
 
-    editButton.addEventListener(
-        "click",
-        function () {
-            openEditApplicationForm(
-                application.id
-            );
-        }
-    );
+    editButton.addEventListener("click", function () {
+        openEditApplicationForm(application.id);
+    });
 
-    const deleteButton =
-        document.createElement("button");
-
+    const deleteButton = document.createElement("button");
     deleteButton.type = "button";
-
-    deleteButton.classList.add(
-        "delete-application-button"
-    );
-
+    deleteButton.classList.add("delete-application-button");
     deleteButton.textContent = "Delete";
 
-    deleteButton.addEventListener(
-        "click",
-        function () {
-            void deleteApplication(
-                application.id
-            );
-        }
-    );
+    deleteButton.addEventListener("click", function () {
+        void deleteApplication(application.id);
+    });
 
     actions.append(editButton, deleteButton);
-
-    listItem.append(
-        heading,
-        details,
-        actions
-    );
+    listItem.append(heading, details, actions);
 
     return listItem;
 }
 
-/* ---------------------------------
-   Tracker availability and rendering
---------------------------------- */
-
 function updateTrackerAvailability() {
-    const unavailable =
-        !currentUser || isLoadingApplications;
+    const unavailable = !currentUser || isLoadingApplications;
 
-    openApplicationFormButton.disabled =
-        unavailable;
-
-    applicationSearchInput.disabled =
-        unavailable;
-
-    statusFilterInput.disabled =
-        unavailable;
-
-    sortApplicationsInput.disabled =
-        unavailable;
+    openApplicationFormButton.disabled = unavailable;
+    applicationSearchInput.disabled = unavailable;
+    statusFilterInput.disabled = unavailable;
+    sortApplicationsInput.disabled = unavailable;
 
     exportApplicationsButton.disabled =
         unavailable || applications.length === 0;
@@ -1254,32 +888,25 @@ function renderApplications() {
 
     if (!currentUser) {
         emptyApplicationsMessage.hidden = false;
-
         emptyApplicationsMessage.textContent =
             "Sign in to view and manage your job applications.";
     } else if (isLoadingApplications) {
         emptyApplicationsMessage.hidden = false;
-
         emptyApplicationsMessage.textContent =
             "Loading your applications...";
     } else if (applications.length === 0) {
         emptyApplicationsMessage.hidden = false;
-
         emptyApplicationsMessage.textContent =
             "No applications have been added yet.";
     } else {
         emptyApplicationsMessage.hidden = true;
     }
 
-    visibleApplications.forEach(
-        function (application) {
-            applicationsList.append(
-                createApplicationListItem(
-                    application
-                )
-            );
-        }
-    );
+    visibleApplications.forEach(function (application) {
+        applicationsList.append(
+            createApplicationListItem(application)
+        );
+    });
 
     if (databaseErrorMessage) {
         applicationsResultsMessage.textContent =
@@ -1294,8 +921,7 @@ function renderApplications() {
         applicationsResultsMessage.textContent =
             "No applications match your current search or filter.";
     } else if (
-        visibleApplications.length
-        === applications.length
+        visibleApplications.length === applications.length
     ) {
         applicationsResultsMessage.textContent =
             `Showing all ${applications.length} applications.`;
@@ -1309,7 +935,7 @@ function renderApplications() {
 }
 
 /* ---------------------------------
-   Save or update application
+   Database CRUD
 --------------------------------- */
 
 applicationForm.addEventListener(
@@ -1323,35 +949,25 @@ applicationForm.addEventListener(
             return;
         }
 
-        const formData =
-            new FormData(applicationForm);
-
-        const databasePayload =
-            createDatabasePayload(formData);
+        const formData = new FormData(applicationForm);
+        const payload = createDatabasePayload(formData);
+        const isEditing = Boolean(editingApplicationId);
 
         submitApplicationButton.disabled = true;
 
-        submitApplicationButton.textContent =
-            editingApplicationId
-                ? "Updating..."
-                : "Saving...";
+        submitApplicationButton.textContent = isEditing
+            ? "Updating..."
+            : "Saving...";
 
         try {
-            if (editingApplicationId) {
-                const { data, error } =
-                    await supabaseClient
-                        .from("job_applications")
-                        .update(databasePayload)
-                        .eq(
-                            "id",
-                            editingApplicationId
-                        )
-                        .eq(
-                            "user_id",
-                            currentUser.id
-                        )
-                        .select()
-                        .single();
+            if (isEditing) {
+                const { data, error } = await supabaseClient
+                    .from("job_applications")
+                    .update(payload)
+                    .eq("id", editingApplicationId)
+                    .eq("user_id", currentUser.id)
+                    .select()
+                    .single();
 
                 if (error) {
                     throw error;
@@ -1361,23 +977,20 @@ applicationForm.addEventListener(
                     convertDatabaseRow(data);
 
                 applications = applications.map(
-                    function (application) {
-                        return application.id
-                            === updatedApplication.id
+                    (application) =>
+                        application.id === updatedApplication.id
                             ? updatedApplication
-                            : application;
-                    }
+                            : application
                 );
             } else {
-                const { data, error } =
-                    await supabaseClient
-                        .from("job_applications")
-                        .insert({
-                            ...databasePayload,
-                            user_id: currentUser.id
-                        })
-                        .select()
-                        .single();
+                const { data, error } = await supabaseClient
+                    .from("job_applications")
+                    .insert({
+                        ...payload,
+                        user_id: currentUser.id
+                    })
+                    .select()
+                    .single();
 
                 if (error) {
                     throw error;
@@ -1397,8 +1010,8 @@ applicationForm.addEventListener(
             );
 
             window.alert(
-                error.message ||
-                    "The application could not be saved."
+                error.message
+                    || "The application could not be saved."
             );
         } finally {
             submitApplicationButton.disabled = false;
@@ -1413,17 +1026,67 @@ applicationForm.addEventListener(
     }
 );
 
+async function deleteApplication(applicationId) {
+    if (!currentUser) {
+        return;
+    }
+
+    const application = applications.find(
+        (item) => item.id === applicationId
+    );
+
+    if (!application) {
+        return;
+    }
+
+    const confirmed = window.confirm(
+        `Delete the ${application.positionTitle} application at ${application.companyName}?`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const { error } = await supabaseClient
+            .from("job_applications")
+            .delete()
+            .eq("id", applicationId)
+            .eq("user_id", currentUser.id);
+
+        if (error) {
+            throw error;
+        }
+
+        applications = applications.filter(
+            (item) => item.id !== applicationId
+        );
+
+        renderApplications();
+    } catch (error) {
+        console.error(
+            "Could not delete application:",
+            error
+        );
+
+        window.alert(
+            error.message
+                || "The application could not be deleted."
+        );
+    }
+}
+
 /* ---------------------------------
    CSV export
 --------------------------------- */
 
 function escapeCsvValue(value) {
-    const textValue =
+    const text =
         value === null || value === undefined
             ? ""
             : String(value);
 
-    return `"${textValue.replace(/"/g, '""')}"`;
+    return `"${text.replace(/"/g, '""')}"`;
 }
 
 function exportApplicationsToCsv() {
@@ -1450,31 +1113,28 @@ function exportApplicationsToCsv() {
         "Updated At"
     ];
 
-    const rows = applications.map(
-        function (application) {
-            return [
-                application.companyName,
-                application.positionTitle,
-                application.location,
-                application.status,
-                application.applicationDate,
-                application.salary,
-                application.jobLink,
-                application.interviewDate,
-                application.followUpDate,
-                application.notes,
-                application.createdAt,
-                application.updatedAt
-            ];
-        }
-    );
+    const rows = applications.map(function (application) {
+        return [
+            application.companyName,
+            application.positionTitle,
+            application.location,
+            application.status,
+            application.applicationDate,
+            application.salary,
+            application.jobLink,
+            application.interviewDate,
+            application.followUpDate,
+            application.notes,
+            application.createdAt,
+            application.updatedAt
+        ];
+    });
 
     const csvContent = [headers, ...rows]
-        .map(function (row) {
-            return row
-                .map(escapeCsvValue)
-                .join(",");
-        })
+        .map(
+            (row) =>
+                row.map(escapeCsvValue).join(",")
+        )
         .join("\r\n");
 
     const csvFile = new Blob(
@@ -1508,7 +1168,7 @@ exportApplicationsButton.addEventListener(
 );
 
 /* ---------------------------------
-   Search, filter, and sort events
+   Search, filter, and sorting events
 --------------------------------- */
 
 applicationSearchInput.addEventListener(
@@ -1534,3 +1194,4 @@ setAuthenticationMode("sign-in");
 resetApplicationForm();
 updateAuthenticationNavigation(null);
 renderApplications();
+initializeAuthentication();
