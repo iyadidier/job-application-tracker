@@ -29,6 +29,9 @@ const openCreateAccountButton = getElement(
     "open-create-account-button"
 );
 const signOutButton = getElement("sign-out-button");
+const forgotPasswordButton = getElement(
+    "forgot-password-button"
+);
 
 const authenticationModal = getElement("authentication-modal");
 const authenticationTitle = getElement("authentication-title");
@@ -204,6 +207,7 @@ function setAuthenticationMode(mode) {
     setAuthenticationMessage("");
 
     const creatingAccount = mode === "create-account";
+    forgotPasswordButton.hidden = creatingAccount;
 
     authenticationTitle.textContent = creatingAccount
         ? "Create Account"
@@ -267,6 +271,86 @@ openSignInButton.addEventListener("click", function () {
 openCreateAccountButton.addEventListener("click", function () {
     openAuthenticationModal("create-account");
 });
+forgotPasswordButton.addEventListener(
+    "click",
+    async function () {
+        if (!supabaseClient) {
+            setAuthenticationMessage(
+                "The Supabase connection is unavailable.",
+                "error"
+            );
+
+            return;
+        }
+
+        const email = authenticationEmailInput.value
+            .trim()
+            .toLowerCase();
+
+        if (!email) {
+            setAuthenticationMessage(
+                "Enter your email address first.",
+                "error"
+            );
+
+            authenticationEmailInput.focus();
+            return;
+        }
+
+        if (!authenticationEmailInput.checkValidity()) {
+            setAuthenticationMessage(
+                "Enter a valid email address.",
+                "error"
+            );
+
+            authenticationEmailInput.focus();
+            return;
+        }
+
+        forgotPasswordButton.disabled = true;
+        forgotPasswordButton.textContent = "Sending...";
+
+        setAuthenticationMessage("");
+
+        try {
+            const redirectTo =
+                `${window.location.origin}/reset-password.html`;
+
+            const { error } =
+                await supabaseClient.auth
+                    .resetPasswordForEmail(
+                        email,
+                        {
+                            redirectTo
+                        }
+                    );
+
+            if (error) {
+                throw error;
+            }
+
+            setAuthenticationMessage(
+                "If an account exists for this email, a password reset link has been sent.",
+                "success"
+            );
+        } catch (error) {
+            console.error(
+                "Password reset request error:",
+                error
+            );
+
+            setAuthenticationMessage(
+                error.message
+                    || "The password reset email could not be sent.",
+                "error"
+            );
+        } finally {
+            forgotPasswordButton.disabled = false;
+            forgotPasswordButton.textContent =
+                "Forgot Password?";
+        }
+    }
+);
 
 closeAuthenticationButton.addEventListener(
     "click",

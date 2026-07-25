@@ -953,3 +953,65 @@ body.modal-open {
 [hidden] {
     display: none !important;
 }
+/* ------------------------------
+   Forgot password
+------------------------------ */
+
+#forgot-password-button {
+    align-self: flex-start;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: var(--primary-color);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#forgot-password-button:hover {
+    text-decoration: underline;
+}
+
+#forgot-password-button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+/* ------------------------------
+   Password reset page
+------------------------------ */
+
+.password-reset-main {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 70vh;
+}
+
+.password-reset-card {
+    width: min(100%, 560px);
+}
+
+.password-reset-card form {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.password-reset-card form > div {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.password-reset-card input {
+    width: 100%;
+}
+
+#password-reset-status {
+    margin-top: 1rem;
+}
+
+#return-to-jobtrack {
+    display: inline-block;
+    margin-top: 1.25rem;
+    font-weight: 700;
+}
