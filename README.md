@@ -8,6 +8,20 @@ Users can create an account, securely sign in, track applications, manage interv
 
 https://iyadidier.github.io/job-application-tracker/
 
+## Screenshots
+
+### Dashboard
+
+![JobTrack Dashboard](assets/screenshots/dashboard.png)
+
+### Applications
+
+![JobTrack Applications](assets/screenshots/applications.png)
+
+### Add Application
+
+![Add Application Form](assets/screenshots/add-application.png)
+
 ## Features
 
 - User account registration
