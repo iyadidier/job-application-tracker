@@ -22,6 +22,7 @@ https://iyadidier.github.io/job-application-tracker/
 
 ![Add Application Form](assets/screenshots/add-application.png)
 
+
 ## Features
 
 - User account registration
@@ -142,3 +143,22 @@ Clone the repository:
 
 ```bash
 git clone https://github.com/iyadidier/job-application-tracker.git
+```
+
+Move into the project folder:
+
+```bash
+cd job-application-tracker
+```
+
+Start the local server:
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open:
+
+```text
+http://localhost:8000
+```
