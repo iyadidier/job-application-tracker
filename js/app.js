@@ -372,8 +372,10 @@ forgotPasswordButton.addEventListener(
         setAuthenticationMessage("");
 
         try {
-            const redirectTo =
-                `${window.location.origin}/reset-password.html`;
+            const redirectTo = new URL(
+    "reset-password.html",
+    window.location.href
+).href;
 
             const { error } =
                 await supabaseClient.auth
@@ -478,7 +480,10 @@ authenticationForm.addEventListener(
                         email,
                         password,
                         options: {
-                            emailRedirectTo: window.location.origin
+                            emailRedirectTo: new URL(
+    "./",
+    window.location.href
+).href
                         }
                     });
 
